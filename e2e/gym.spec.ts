@@ -1,0 +1,436 @@
+import { test, expect, type Page } from "@playwright/test";
+import { readFile } from "node:fs/promises";
+import AxeBuilder from "@axe-core/playwright";
+const browserErrors = new Map<Page, string[]>();
+test.beforeEach(async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-10-19T19:00:00Z"));
+  const errors: string[] = [];
+  browserErrors.set(page, errors);
+  page.on("pageerror", (e) => errors.push(e.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+});
+test.afterEach(async ({ page }) => {
+  expect(browserErrors.get(page) ?? [], "No browser errors").toEqual([]);
+  browserErrors.delete(page);
+});
+async function onboard(page: Page) {
+  await page.goto("./");
+  await page.getByLabel("Current weight (lb)").fill("135");
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect(page.getByText("Your first week,")).toBeVisible();
+  await page.getByRole("button", { name: "Let’s get stronger" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Let’s build, Christopher." }),
+  ).toBeVisible();
+}
+async function nav(page: Page, name: string) {
+  await page
+    .getByRole("navigation", { name: "Main navigation" })
+    .getByRole("link", { name, exact: true })
+    .click();
+}
+async function settings(page: Page) {
+  await page.goto("./#Settings");
+  await expect(
+    page.getByRole("heading", { name: "Your space. Your settings." }),
+  ).toBeVisible();
+}
+test("onboarding, full workout lifecycle, setup, replacement, history and offline", async ({
+  page,
+  context,
+}, info) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await onboard(page);
+  await page.screenshot({
+    path: `test-results/${info.project.name}-today.png`,
+    fullPage: true,
+  });
+  await page
+    .getByRole("button", { name: "Start workout", exact: true })
+    .click();
+  const card = page.locator(".live-exercise").first();
+  const ex = await card.locator("h2").innerText();
+  await card.locator("summary").click();
+  await card
+    .getByLabel("Exercise notes", { exact: true })
+    .fill("Controlled tempo");
+  await card.getByLabel("Fatigue today", { exact: true }).selectOption("high");
+  await expect(card.getByLabel("Exercise notes", { exact: true })).toHaveValue(
+    "Controlled tempo",
+  );
+  await expect(card.getByLabel("Fatigue today", { exact: true })).toHaveValue(
+    "high",
+  );
+  await card.locator("summary").click();
+  await page
+    .getByLabel("Workout notes", { exact: true })
+    .fill("Solid foundation session");
+  await expect(page.getByLabel("Workout notes", { exact: true })).toHaveValue(
+    "Solid foundation session",
+  );
+  await card.getByLabel(`${ex} set 1 weight`, { exact: true }).fill("50");
+  await card.getByLabel(`${ex} set 1 reps`, { exact: true }).fill("12");
+  await card.getByLabel(`${ex} set 1 RIR`, { exact: true }).fill("2");
+  await card
+    .getByRole("button", { name: "Machine setup", exact: true })
+    .click();
+  await page.getByLabel("Seat position").fill("4");
+  await page.getByLabel("Handle selection").fill("Neutral");
+  await page.getByRole("button", { name: "Save setup" }).click();
+  await card
+    .getByRole("button", { name: `Complete ${ex} set 1`, exact: true })
+    .click();
+  await expect(page.getByText("Breathe. Reset. Go again.")).toBeVisible();
+  await page.getByRole("button", { name: "Skip", exact: true }).click();
+  await page.reload();
+  await expect(
+    page.getByLabel(`${ex} set 1 weight`, { exact: true }),
+  ).toHaveValue("50");
+  await expect(
+    page.getByRole("button", { name: `Uncheck ${ex} set 1`, exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await page
+    .getByRole("button", { name: "Pause workout", exact: true })
+    .click();
+  await expect(
+    page.getByText("Workout paused.", { exact: false }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Resume workout", exact: true })
+    .click();
+  await card.getByRole("button", { name: "Add set", exact: true }).click();
+  await expect(card.locator(".set-row")).toHaveCount(3);
+  await card
+    .getByRole("button", { name: `Delete ${ex} set 3`, exact: true })
+    .click();
+  await expect(card.locator(".set-row")).toHaveCount(2);
+  await card
+    .getByRole("button", { name: "Machine occupied?", exact: true })
+    .click();
+  await page.getByLabel("Replacement machine").selectOption("m-cable");
+  await page.getByRole("button", { name: "Use this setup" }).click();
+  await expect(
+    page.locator(".live-exercise").first().locator(".set-row"),
+  ).toHaveCount(1);
+  const replacement = page.locator(".live-exercise").nth(1);
+  await expect(
+    replacement.getByRole("button", { name: "Cable station", exact: true }),
+  ).toBeVisible();
+  await replacement
+    .getByLabel(`${ex} set 1 weight`, { exact: true })
+    .fill("20");
+  await replacement
+    .getByRole("button", { name: `Complete ${ex} set 1`, exact: true })
+    .click();
+  await page.getByRole("button", { name: "Skip", exact: true }).click();
+  await page.screenshot({
+    path: `test-results/${info.project.name}-workout.png`,
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Finish", exact: true }).click();
+  await page.getByRole("button", { name: "Save workout", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "You showed up." }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("First recorded best", { exact: false }).first(),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Setup: seat: 4", { exact: false }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Keep the rhythm" }).click();
+  await nav(page, "Progress");
+  await page.getByLabel("Machine", { exact: true }).selectOption("m-press");
+  await expect(
+    page.getByRole("img", { name: /Heaviest working set/ }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Machine usage", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Most-used machines" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "History", exact: true }).click();
+  await expect(page.locator(".history-card")).toHaveCount(1);
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  await page.reload();
+  await context.setOffline(true);
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "See your strength grow." }),
+  ).toBeVisible();
+  await nav(page, "Today");
+  await page.getByRole("button", { name: "Repeat last workout" }).click();
+  await expect(
+    page
+      .locator(".live-exercise")
+      .first()
+      .getByLabel(`${ex} set 1 weight`, { exact: true }),
+  ).toHaveValue("50");
+  await context.setOffline(false);
+  expect(errors).toEqual([]);
+});
+test("machine creation/edit, program assignment, nutrition, theme and backups", async ({
+  page,
+}, info) => {
+  await onboard(page);
+  await nav(page, "Machines");
+  await page.getByRole("button", { name: "Add machine", exact: true }).click();
+  await page.getByLabel("Machine name").fill("Chest press near mirrors");
+  await page.getByLabel("Gym area", { exact: true }).fill("Chest corner");
+  await page.getByLabel("Seat position").fill("3");
+  await page.getByRole("button", { name: "Save machine", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Chest press near mirrors" }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Edit Chest press near mirrors", exact: true })
+    .click();
+  await page.getByLabel("Pad position").fill("2");
+  await page.getByRole("button", { name: "Save machine", exact: true }).click();
+  await page
+    .getByRole("button", {
+      name: "Favorite Chest press near mirrors",
+      exact: true,
+    })
+    .click();
+  await nav(page, "Programs");
+  await page
+    .getByRole("button", { name: "Edit Full Body A", exact: true })
+    .click();
+  await page
+    .getByLabel("Assigned machine")
+    .first()
+    .selectOption({ label: "Chest press near mirrors" });
+  await page.getByRole("button", { name: "Save program" }).click();
+  await nav(page, "Today");
+  await expect(
+    page.getByText("Chest press near mirrors · 2 × 8–12"),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Start workout", exact: true })
+    .click();
+  const first = page.locator(".live-exercise").first();
+  await first
+    .getByLabel("Incline machine chest press set 1 weight", { exact: true })
+    .fill("40");
+  await first
+    .getByRole("button", {
+      name: "Complete Incline machine chest press set 1",
+      exact: true,
+    })
+    .click();
+  await page.getByRole("button", { name: "Skip", exact: true }).click();
+  await page.getByRole("button", { name: "Finish", exact: true }).click();
+  await page.getByRole("button", { name: "Save workout", exact: true }).click();
+  await page.getByRole("button", { name: "Keep the rhythm" }).click();
+  await nav(page, "Nutrition");
+  await page.getByLabel("Weight today (lb)").fill("136");
+  await page.getByRole("button", { name: "Save weigh-in" }).click();
+  await page.getByLabel("Food or meal (optional)").fill("Lunch");
+  await page.getByLabel("Protein (g)", { exact: true }).fill("35");
+  await page.getByLabel("Calories (optional)", { exact: true }).fill("600");
+  await page.getByRole("button", { name: "Add entry", exact: true }).click();
+  await expect(page.getByText("35 g protein · 600 kcal")).toBeVisible();
+  await settings(page);
+  await page.getByRole("button", { name: "Daylight" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await page.screenshot({
+    path: `test-results/${info.project.name}-light-settings.png`,
+    fullPage: true,
+  });
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export all data" }).click();
+  const download = await downloadPromise;
+  const path = await download.path();
+  expect(path).toBeTruthy();
+  const content = await readFile(path!, "utf8");
+  expect(JSON.parse(content).data.history).toHaveLength(1);
+  expect(
+    JSON.parse(content).data.machines.some(
+      (m: { name: string }) => m.name === "Chest press near mirrors",
+    ),
+  ).toBe(true);
+  await page.getByLabel("Import backup", { exact: true }).setInputFiles({
+    name: "bad.json",
+    mimeType: "application/json",
+    buffer: Buffer.from("{invalid"),
+  });
+  await expect(
+    page.getByRole("status").filter({ hasText: "Import rejected" }),
+  ).toBeVisible();
+  await page.getByLabel("Import backup", { exact: true }).setInputFiles({
+    name: "backup.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(content),
+  });
+  await page
+    .getByRole("button", { name: "Restore backup", exact: true })
+    .click();
+  await expect(
+    page.getByText("Backup restored.", { exact: false }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await expect(
+    page.getByText("Recovery snapshots", { exact: true }),
+  ).toBeVisible();
+  await nav(page, "Machines");
+  await page.getByLabel("Search machines").fill("mirrors");
+  await expect(
+    page.getByRole("heading", { name: "Chest press near mirrors" }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
+test("accessible navigation and forms, cross-tab saves, custom program, archive and discard", async ({
+  page,
+  context,
+}) => {
+  await onboard(page);
+  for (const name of [
+    "Today",
+    "Programs",
+    "Machines",
+    "Progress",
+    "Nutrition",
+  ]) {
+    await nav(page, name);
+    await expect(page.locator("main h1")).toBeVisible();
+    const result = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+      .analyze();
+    expect(
+      result.violations.map((v) => ({
+        id: v.id,
+        nodes: v.nodes.map((n) => n.target),
+      })),
+      name,
+    ).toEqual([]);
+  }
+  await settings(page);
+  const other = await context.newPage();
+  await other.goto("./#Settings");
+  await page.getByLabel("Name", { exact: true }).fill("Test athlete");
+  await page.getByRole("button", { name: "Save profile" }).click();
+  await other.goto("./#Today");
+  await expect(
+    other.getByRole("heading", { name: "Let’s build, Test athlete." }),
+  ).toBeVisible();
+  await other.close();
+  await page.getByRole("button", { name: "Daylight" }).click();
+  for (const name of [
+    "Today",
+    "Programs",
+    "Machines",
+    "Progress",
+    "Nutrition",
+  ]) {
+    await nav(page, name);
+    const results = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+      .analyze();
+    expect(
+      results.violations.map((v) => ({
+        id: v.id,
+        nodes: v.nodes.map((n) => n.target),
+      })),
+      `Light mode ${name}`,
+    ).toEqual([]);
+  }
+  await nav(page, "Programs");
+  await page
+    .getByRole("button", { name: "Create program", exact: true })
+    .click();
+  await page.getByLabel("Program name").fill("Quick session");
+  await page.getByRole("button", { name: "Add", exact: true }).click();
+  await page.getByRole("button", { name: "Save program", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Quick session", exact: true }),
+  ).toBeVisible();
+  const program = page.locator(".program-grid .card").filter({
+    has: page.getByRole("heading", { name: "Quick session", exact: true }),
+  });
+  await program.getByRole("button", { name: "Start this session" }).click();
+  const workoutAccess = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+    .analyze();
+  expect(
+    workoutAccess.violations.map((v) => ({
+      id: v.id,
+      nodes: v.nodes.map((n) => n.target),
+    })),
+    "Workout accessibility",
+  ).toEqual([]);
+  await page
+    .getByRole("button", { name: "Discard workout", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Discard session", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Let’s build, Test athlete." }),
+  ).toBeVisible();
+  await nav(page, "Machines");
+  await page
+    .getByRole("heading", { name: "Incline chest press", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Archive machine", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Archived", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Incline chest press", exact: true }),
+  ).toBeVisible();
+});
+test("manifest, narrow layouts, empty analytics, reduced motion and invalid input", async ({
+  page,
+}, info) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await onboard(page);
+  for (const name of [
+    "Today",
+    "Programs",
+    "Machines",
+    "Progress",
+    "Nutrition",
+  ]) {
+    await nav(page, name);
+    await expect(page.locator("main h1")).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+      name,
+    ).toBe(true);
+  }
+  await nav(page, "Progress");
+  await expect(page.getByText("Your story starts here").first()).toBeVisible();
+  const manifest = await (
+    await page.request.get("manifest.webmanifest")
+  ).json();
+  expect(manifest.start_url).toBe("/gym/");
+  expect(manifest.scope).toBe("/gym/");
+  expect(manifest.display).toBe("standalone");
+  for (const icon of manifest.icons) {
+    expect((await page.request.get(icon.src)).status()).toBe(200);
+  }
+  await nav(page, "Nutrition");
+  await page.getByLabel("Weight today (lb)").fill("-1");
+  await page.getByRole("button", { name: "Save weigh-in" }).click();
+  await expect(page.getByLabel("Weight today (lb)")).toHaveValue("-1");
+  await page.screenshot({
+    path: `test-results/${info.project.name}-narrow.png`,
+    fullPage: true,
+  });
+});
