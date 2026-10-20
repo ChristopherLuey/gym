@@ -165,8 +165,14 @@ export function machineStats(
   };
 }
 export function records(state: State, w: Workout) {
-  return w.entries.flatMap((e) => {
-    const done = working(e);
+  const combinations = new Map<string, Entry[]>();
+  for (const entry of w.entries) {
+    const key = JSON.stringify([entry.exerciseId, entry.machineId]);
+    combinations.set(key, [...(combinations.get(key) ?? []), entry]);
+  }
+  return [...combinations.values()].flatMap((entries) => {
+    const e = entries[0],
+      done = entries.flatMap(working);
     if (!done.length) return [];
     const historical = state.history
       .filter(
@@ -188,6 +194,9 @@ export function records(state: State, w: Workout) {
             machineId: e.machineId,
             exerciseId: e.exerciseId,
             kg: max,
+            previousKg: historical.length
+              ? Math.max(...historical.map((s) => s.kg))
+              : null,
             first: !historical.length,
           },
         ]
@@ -233,15 +242,64 @@ export function plannedCompletion(s: State) {
     extra: Math.max(0, weekHistory(s).length - matched),
   };
 }
-export function trainingFrequency(history: Workout[]) {
+export function trainingFrequency(history: Workout[], now = new Date()) {
   const weeks = new Map<string, number>();
   for (const w of history) {
     const key = localDay(weekStart(new Date(w.finished ?? w.started)));
     weeks.set(key, (weeks.get(key) ?? 0) + 1);
   }
+  if (weeks.size) {
+    const earliest = [...weeks.keys()].sort()[0];
+    const cursor = new Date(`${earliest}T12:00:00`),
+      end = weekStart(now);
+    // Keep inactive weeks visible instead of collapsing gaps in consistency.
+    while (localDay(cursor) <= localDay(end)) {
+      const key = localDay(cursor);
+      if (!weeks.has(key)) weeks.set(key, 0);
+      cursor.setDate(cursor.getDate() + 7);
+    }
+  }
   return [...weeks]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, value]) => ({ date, value }));
+}
+export function weightTrend(s: State, now = new Date()) {
+  const end = new Date(now);
+  end.setHours(0, 0, 0, 0);
+  end.setDate(end.getDate() + 1);
+  const currentStart = new Date(end);
+  currentStart.setDate(currentStart.getDate() - 7);
+  const previousStart = new Date(currentStart);
+  previousStart.setDate(previousStart.getDate() - 7);
+  const recent = s.weights.filter(
+    (w) => w.date >= localDay(currentStart) && w.date < localDay(end),
+  );
+  const prior = s.weights.filter(
+    (w) => w.date >= localDay(previousStart) && w.date < localDay(currentStart),
+  );
+  const average = (xs: State["weights"]) =>
+    xs.length ? xs.reduce((sum, w) => sum + w.kg, 0) / xs.length : null;
+  const current = average(recent),
+    previous = average(prior);
+  const delta =
+    current !== null && previous !== null ? current - previous : null;
+  const target = s.profile.targetKg;
+  const direction =
+    current === null || previous === null || target === null
+      ? "unknown"
+      : Math.abs(target - current) < Math.abs(target - previous)
+        ? "toward"
+        : Math.abs(target - current) > Math.abs(target - previous)
+          ? "away"
+          : "steady";
+  return {
+    current,
+    previous,
+    delta,
+    direction,
+    recentCount: recent.length,
+    priorCount: prior.length,
+  };
 }
 export function nextProgram(s: State, offset = 0) {
   for (let i = offset; i < offset + 8; i++) {

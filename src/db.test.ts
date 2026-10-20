@@ -1,4 +1,5 @@
 import { afterEach, describe, it, expect } from "vitest";
+import Dexie from "dexie";
 import {
   GymDB,
   encodeBackup,
@@ -19,6 +20,49 @@ afterEach(async () => {
   for (const db of databases.splice(0)) await db.delete();
 });
 describe("persistence and recovery", () => {
+  it("upgrades a real version-one database while retaining active work and settings", async () => {
+    const name = `test-${crypto.randomUUID()}`,
+      legacy = new Dexie(name),
+      s = seed();
+    s.active = startWorkout(s, s.programs[0]);
+    s.active.entries[0].setup.seat = "Legacy seat";
+    const old = {
+      ...s,
+      schema: 1,
+      meals: undefined,
+      measurements: undefined,
+      profile: { ...s.profile, equipmentGroup: undefined },
+    };
+    legacy.version(1).stores({ state: "id", recovery: "id,created" });
+    await legacy.table("state").put({ id: "main", value: old });
+    legacy.close();
+    const upgraded = new GymDB(name);
+    databases.push(upgraded);
+    await upgraded.open();
+    const row = await upgraded.state.get("main");
+    expect(row?.value.schema).toBe(2);
+    expect(row?.revision).toBe(0);
+    expect(row?.value.profile.equipmentGroup).toBe("none");
+    expect(row?.value.active?.entries[0].setup.seat).toBe("Legacy seat");
+    expect(row?.value.measurements).toEqual([]);
+  });
+  it("rolls back both tables if a storage failure interrupts an import", async () => {
+    const db = database(),
+      original = seed();
+    await db.state.put({ id: "main", value: original, revision: 1 });
+    const imported = seed();
+    imported.profile.name = "Should not be saved";
+    const fail = () => {
+      throw new DOMException("Simulated storage full", "QuotaExceededError");
+    };
+    db.state.hook("updating", fail);
+    await expect(restore(db, imported)).rejects.toThrow(
+      "Simulated storage full",
+    );
+    db.state.hook("updating").unsubscribe(fail);
+    expect((await db.state.get("main"))?.value).toEqual(original);
+    expect(await db.recovery.count()).toBe(0);
+  });
   it("prevents an import from replacing an active workout started in another tab", async () => {
     const db = database(),
       s = seed();

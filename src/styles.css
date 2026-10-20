@@ -2365,3 +2365,19 @@ details > p {
   color: var(--muted);
   font-weight: 500;
 }
+:is(.plan-link) {
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+  min-height: 48px;
+}
+.plan-link:hover {
+  background: var(--surface);
+}
+.machine-group {
+  margin-top: 24px;
+}

@@ -278,7 +278,10 @@ export default function Progress({
                 in this view.{" "}
                 {weightData.length >= 2
                   ? `Bodyweight moved from ${weightData[0].value} to ${weightData.at(-1)!.value} ${s.profile.units}.`
-                  : "Add regular weigh-ins to understand your weight trend."}
+                  : "Add regular weigh-ins to understand your weight trend."}{" "}
+                {pbs.filter((r) => !r.first).length} improvements over an
+                earlier load record in this view, each measured on the same
+                exercise and machine.
               </p>
               <small>
                 These are training and bodyweight signals, not a measurement of

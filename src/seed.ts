@@ -143,6 +143,7 @@ export const defaultProfile: Profile = {
   theme: "dark",
   rest: 90,
   onboarded: false,
+  equipmentGroup: "none",
 };
 export function seed(): State {
   const machines = [

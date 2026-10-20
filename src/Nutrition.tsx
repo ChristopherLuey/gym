@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Plus, Utensils, Trash2 } from "lucide-react";
 import { type State, localDay, fromKg, toKg, uid, formatDate } from "./model";
 import { change } from "./db";
+import { weightTrend } from "./logic";
 import { Button, Card, Field, Heading, SectionTitle, Stat, Modal } from "./ui";
 export function Nutrition({ state: s }: { state: State }) {
   const [weight, setWeight] = useState(""),
@@ -20,12 +21,8 @@ export function Nutrition({ state: s }: { state: State }) {
     );
   const weights = [...s.weights].sort((a, b) => a.date.localeCompare(b.date));
   const current = weights.at(-1);
-  const week = weights.filter(
-    (w) => new Date(w.date + "T12:00:00").getTime() > Date.now() - 7 * 86400000,
-  );
-  const avg = week.length
-    ? week.reduce((n, w) => n + w.kg, 0) / week.length
-    : null;
+  const trend = weightTrend(s),
+    avg = trend.current;
   const logs = s.nutrition.filter((n) => n.date === date);
   const proteinTotal = logs.reduce((n, l) => n + l.protein, 0),
     calorieTotal = logs.reduce((n, l) => n + l.calories, 0),
@@ -99,7 +96,7 @@ export function Nutrition({ state: s }: { state: State }) {
                 "—"
               )
             }
-            detail={`${week.length} weigh-ins in the last seven days`}
+            detail={`${trend.recentCount} weigh-ins in the last seven days`}
           />
         </Card>
         <Card>
@@ -123,6 +120,11 @@ export function Nutrition({ state: s }: { state: State }) {
           />
         </Card>
       </div>
+      <p className="note">
+        {trend.delta === null
+          ? "Log weigh-ins across two weeks to compare your weekly averages."
+          : `${trend.delta > 0 ? "+" : ""}${fromKg(trend.delta, s.profile.units)} ${s.profile.units} compared with the previous seven-day average (${trend.priorCount} earlier weigh-ins). ${trend.direction === "toward" ? "Your average is moving toward your target." : trend.direction === "away" ? "Your average is moving away from your target. Revisit your meals, recovery, and goal if this continues." : trend.direction === "steady" ? "Your distance from the target is unchanged." : "Set a target if you want to compare direction."}`}
+      </p>
       <div className="split-grid">
         <Card>
           <SectionTitle title="A quick weigh-in" />

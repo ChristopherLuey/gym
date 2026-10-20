@@ -206,8 +206,8 @@ Preferred: React, TypeScript, Vite, Tailwind or equivalent maintainable styling,
 
 - [ ] Inspect account and `ChristopherLuey/gym`; determine absence versus access restriction.
 - [ ] Preserve valuable pre-existing work; create the repository only if absent.
-- [ ] Configure Vite base `/gym/` and resilient static-site navigation.
-- [ ] Configure GitHub Actions for install, type/build checks, unit and end-to-end tests, build, artifact upload, and Pages deployment.
+- [x] Configure Vite base `/gym/` and resilient static-site navigation (verified in local production builds).
+- [x] Configure GitHub Actions for install, type/build checks, unit and end-to-end tests, build, artifact upload, and Pages deployment (workflow written; remote execution remains pending).
 - [ ] Configure Pages to publish through Actions with necessary least-privilege workflow permissions.
 - [ ] Commit and push reviewed source without personal data/secrets.
 - [ ] Confirm passing workflow and successful deployment.

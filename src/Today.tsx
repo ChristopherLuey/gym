@@ -22,6 +22,7 @@ import {
   setCount,
   records,
   plannedCompletion,
+  weightTrend,
 } from "./logic";
 import {
   Card,
@@ -37,17 +38,21 @@ export function Today({
   start,
   navigate,
   showWorkout,
+  openMachine,
 }: {
   state: State;
   start: (p: Program) => void;
   navigate: (page: string) => void;
   showWorkout: (id: string) => void;
+  openMachine: (id: string) => void;
 }) {
   const next = nextProgram(s),
     weekly = weekHistory(s),
-    last = s.history.at(-1),
+    last = [...s.history]
+      .sort((a, b) => (a.finished ?? 0) - (b.finished ?? 0))
+      .at(-1),
     weight = [...s.weights].sort((a, b) => a.date.localeCompare(b.date)).at(-1),
-    prior = [...s.weights].sort((a, b) => a.date.localeCompare(b.date)).at(-2),
+    trend = weightTrend(s),
     used = s.machines
       .map((m) => ({ m, stats: machineStats(s, m.id) }))
       .filter((x) => x.stats.last)
@@ -55,6 +60,36 @@ export function Today({
       .slice(0, 3),
     pb = last ? records(s, last) : [],
     today = next && localDay(next.date) === localDay();
+  const improvements = [...s.history]
+    .sort((a, b) => (b.finished ?? 0) - (a.finished ?? 0))
+    .flatMap((w) =>
+      records(s, w)
+        .filter((r) => !r.first)
+        .map((r) => ({ ...r, date: w.finished! })),
+    )
+    .slice(0, 3);
+  const plan = s.active
+    ? s.active.entries.map((e) => ({
+        id: e.id,
+        name: e.exerciseName,
+        machineId: e.machineId,
+        machineName: e.machineName,
+        sets: e.targetSets,
+        min: e.min,
+        max: e.max,
+        muscles: e.muscles,
+      }))
+    : (next?.program.items ?? []).map((item) => {
+        const e = s.exercises.find((e) => e.id === item.exerciseId),
+          m = s.machines.find((m) => m.id === item.machineId && !m.archived);
+        return {
+          ...item,
+          name: e?.name ?? "Exercise",
+          machineName: m?.name ?? "Choose equipment in your session",
+          sets: s.profile.intro ? Math.min(item.sets, 2) : item.sets,
+          muscles: e?.muscles ?? [],
+        };
+      });
   const { planned, matched, extra } = plannedCompletion(s);
   return (
     <>
@@ -217,9 +252,9 @@ export function Today({
               )
             }
             detail={
-              weight && prior
-                ? `${fromKg(weight.kg - prior.kg, s.profile.units) > 0 ? "+" : ""}${fromKg(weight.kg - prior.kg, s.profile.units)} ${s.profile.units} since previous entry`
-                : "Add a weigh-in to see your trend"
+              trend.delta !== null
+                ? `${trend.delta > 0 ? "+" : ""}${fromKg(trend.delta, s.profile.units)} ${s.profile.units} · weekly average change`
+                : "Log across two weeks to see your trend"
             }
           />
           <ArrowLink onClick={() => navigate("Nutrition")}>
@@ -257,27 +292,29 @@ export function Today({
               </ArrowLink>
             }
           />
-          {next ? (
-            next.program.items.map((item, i) => {
-              const e = s.exercises.find((e) => e.id === item.exerciseId),
-                m = s.machines.find(
-                  (m) => m.id === item.machineId && !m.archived,
-                );
+          {plan.length ? (
+            plan.map((item, i) => {
               return (
-                <div className="exercise-preview" key={item.id}>
+                <button
+                  className="exercise-preview plan-link"
+                  key={item.id}
+                  onClick={() =>
+                    item.machineId
+                      ? openMachine(item.machineId)
+                      : navigate(s.active ? "Workout" : "Programs")
+                  }
+                >
                   <span className="number">
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <div>
-                    <strong>{e?.name}</strong>
+                    <strong>{item.name}</strong>
                     <small>
-                      {m?.name ?? "Choose equipment in your session"} ·{" "}
-                      {s.profile.intro ? Math.min(item.sets, 2) : item.sets} ×{" "}
-                      {item.min}–{item.max}
+                      {item.machineName} · {item.sets} × {item.min}–{item.max}
                     </small>
                   </div>
-                  <span className="muscle-tag">{e?.muscles[0]}</span>
-                </div>
+                  <span className="muscle-tag">{item.muscles[0]}</span>
+                </button>
               );
             })
           ) : (
@@ -352,7 +389,11 @@ export function Today({
             <SectionTitle title="Recently used" />
             {used.length ? (
               used.map(({ m, stats }) => (
-                <div className="list-line" key={m.id}>
+                <button
+                  className="list-line plan-link"
+                  key={m.id}
+                  onClick={() => openMachine(m.id)}
+                >
                   <div>
                     <strong>{m.name}</strong>
                     <small>
@@ -360,11 +401,36 @@ export function Today({
                     </small>
                   </div>
                   <Dumbbell size={16} />
-                </div>
+                </button>
               ))
             ) : (
               <p className="muted">
                 Log a set to start building your equipment history.
+              </p>
+            )}
+          </Card>
+          <Card>
+            <SectionTitle title="Recent strength improvements" />
+            {improvements.length ? (
+              improvements.map((r, i) => (
+                <div className="list-line" key={i}>
+                  <div>
+                    <strong>{r.name}</strong>
+                    <small>
+                      {r.machine} · {formatDate(r.date)}
+                    </small>
+                  </div>
+                  <strong>
+                    +{fromKg(r.kg - r.previousKg!, s.profile.units)}{" "}
+                    {s.profile.units}
+                  </strong>
+                </div>
+              ))
+            ) : (
+              <p className="muted">
+                Your first sessions establish a baseline. Improvements appear
+                when you exceed a previous load on the same exercise and
+                machine.
               </p>
             )}
           </Card>

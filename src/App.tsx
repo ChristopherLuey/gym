@@ -38,6 +38,15 @@ const nav = [
   ["Progress", ChartNoAxesCombined],
   ["Nutrition", Utensils],
 ] as const;
+function route() {
+  const [page, query] = location.hash.slice(1).split("?");
+  return {
+    page: [...nav.map(([name]) => name), "Settings"].includes(page)
+      ? page
+      : "Today",
+    machine: new URLSearchParams(query).get("machine"),
+  };
+}
 export default function App() {
   const {
     state: s,
@@ -45,7 +54,8 @@ export default function App() {
     error,
     saving,
   } = useSyncExternalStore(subscribe, getSnapshot);
-  const [page, setPage] = useState(() => location.hash.slice(1) || "Today"),
+  const [page, setPage] = useState(() => route().page),
+    [machine, setMachine] = useState(() => route().machine),
     [summary, setSummary] = useState<string | null>(null),
     [online, setOnline] = useState(navigator.onLine);
   const {
@@ -55,7 +65,11 @@ export default function App() {
   } = useRegisterSW({ onRegisterError: () => {} });
   useEffect(() => {
     void load();
-    const hash = () => setPage(location.hash.slice(1) || "Today");
+    const hash = () => {
+      const r = route();
+      setPage(r.page);
+      setMachine(r.machine);
+    };
     window.addEventListener("hashchange", hash);
     const network = () => setOnline(navigator.onLine);
     window.addEventListener("online", network);
@@ -75,9 +89,11 @@ export default function App() {
         s.profile.theme === "dark" ? "#101214" : "#f6f7f2",
       );
   }, [s.profile.theme]);
-  const navigate = (p: string) => {
-    location.hash = p;
+  const navigate = (p: string, machineId: string | null = null) => {
+    location.hash =
+      p + (machineId ? `?machine=${encodeURIComponent(machineId)}` : "");
     setPage(p);
+    setMachine(machineId);
     window.scrollTo({ top: 0, behavior: "instant" });
   };
   const start = async (p: Program) => {
@@ -227,13 +243,14 @@ export default function App() {
               start={(p) => void start(p)}
               navigate={navigate}
               showWorkout={setSummary}
+              openMachine={(id) => navigate("Machines", id)}
             />
           ) : page === "Workout" ? (
             <Workout state={s} navigate={navigate} showWorkout={setSummary} />
           ) : page === "Programs" ? (
             <Programs state={s} start={(p) => void start(p)} />
           ) : page === "Machines" ? (
-            <Machines state={s} />
+            <Machines state={s} initialSelection={machine} />
           ) : page === "Progress" ? (
             <Suspense fallback={<p>Loading your progress…</p>}>
               <Progress state={s} showWorkout={setSummary} />

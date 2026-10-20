@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Plus,
   Search,
@@ -20,7 +20,16 @@ import {
 } from "./model";
 import { machineStats, nextProgram } from "./logic";
 import { change } from "./db";
-import { Button, Card, Empty, Field, Heading, Modal, Stat } from "./ui";
+import {
+  Button,
+  Card,
+  Empty,
+  Field,
+  Heading,
+  Modal,
+  Stat,
+  SectionTitle,
+} from "./ui";
 export const setupLabels: Record<keyof Setup, string> = {
   seat: "Seat position",
   pad: "Pad position",
@@ -218,14 +227,25 @@ export function MachineEditor({
     </Modal>
   );
 }
-export function Machines({ state: s }: { state: State }) {
+export function Machines({
+  state: s,
+  initialSelection,
+}: {
+  state: State;
+  initialSelection?: string | null;
+}) {
   const [query, setQuery] = useState(""),
     [filter, setFilter] = useState("All"),
     [area, setArea] = useState("All areas"),
     [editor, setEditor] = useState<Machine | null | undefined>(),
-    [detail, setDetail] = useState<string | null>(null);
+    [detail, setDetail] = useState<string | null>(initialSelection ?? null);
+  useEffect(() => setDetail(initialSelection ?? null), [initialSelection]);
   const next = nextProgram(s);
-  const planned = new Set(next?.program.items.map((i) => i.machineId));
+  const planned = new Set(
+    s.active
+      ? s.active.entries.map((i) => i.machineId)
+      : next?.program.items.map((i) => i.machineId),
+  );
   const shown = s.machines.filter(
     (m) =>
       (filter === "Archived" ? m.archived : !m.archived) &&
@@ -240,6 +260,18 @@ export function Machines({ state: s }: { state: State }) {
         .toLowerCase()
         .includes(query.toLowerCase()),
   );
+  const grouping = s.profile.equipmentGroup;
+  const groups = new Map<string, Machine[]>();
+  for (const m of shown) {
+    const keys =
+      grouping === "muscle"
+        ? [...new Set(m.muscles.filter(Boolean))]
+        : [grouping === "area" ? m.area : grouping === "type" ? m.type : ""];
+    for (const key of keys.length ? keys : ["Unassigned"]) {
+      const label = key || "Unassigned";
+      groups.set(label, [...(groups.get(label) ?? []), m]);
+    }
+  }
   const selected = s.machines.find((m) => m.id === detail),
     stats = selected ? machineStats(s, selected.id) : null;
   return (
@@ -277,6 +309,21 @@ export function Machines({ state: s }: { state: State }) {
             ),
           )}
         </select>
+        <select
+          aria-label="Group machines by"
+          value={grouping}
+          onChange={(e) => {
+            const value = e.target.value as State["profile"]["equipmentGroup"];
+            void change((s) => {
+              s.profile.equipmentGroup = value;
+            }).catch(() => {});
+          }}
+        >
+          <option value="none">Simple list</option>
+          <option value="area">Gym area</option>
+          <option value="type">Equipment type</option>
+          <option value="muscle">Muscle group</option>
+        </select>
       </div>
       <div className="tabs wrap">
         {[
@@ -297,82 +344,104 @@ export function Machines({ state: s }: { state: State }) {
           </button>
         ))}
       </div>
-      <div className="machine-grid">
-        {shown.map((m) => {
-          const st = machineStats(s, m.id);
-          return (
-            <Card key={m.id} className="machine-card">
-              <div className="machine-card-top">
-                <span className="icon-box">
-                  <Dumbbell />
-                </span>
-                <Button
-                  aria-label={`${m.favorite ? "Unfavorite" : "Favorite"} ${m.name}`}
-                  variant={`icon ghost ${m.favorite ? "accent" : ""}`}
-                  onClick={() =>
-                    void change((s) => {
-                      s.machines.find((x) => x.id === m.id)!.favorite =
-                        !m.favorite;
-                    }).catch(() => {})
-                  }
-                >
-                  <Star size={20} fill={m.favorite ? "currentColor" : "none"} />
-                </Button>
-              </div>
-              <button className="machine-title" onClick={() => setDetail(m.id)}>
-                <h3>{m.name}</h3>
-              </button>
-              <p className="muted small">
-                {m.area || "No area assigned"} · {m.type}
-              </p>
-              <div className="tag-row">
-                {m.muscles.map((x, i) => (
-                  <span className="muscle-tag" key={i}>
-                    {x}
-                  </span>
-                ))}
-              </div>
-              <div className="machine-stats">
-                <div>
-                  <strong>{st.sessions}</strong>
-                  <small>sessions</small>
-                </div>
-                <div>
-                  <strong>{st.sets}</strong>
-                  <small>working sets</small>
-                </div>
-                <div>
-                  <strong>{st.last ? formatDate(st.last) : "—"}</strong>
-                  <small>last used</small>
-                </div>
-              </div>
-              <div className="machine-card-bottom">
-                <span
-                  className={planned.has(m.id) ? "accent small" : "muted small"}
-                >
-                  {planned.has(m.id) ? (
-                    <>
-                      <Check size={14} />
-                      Next workout
-                    </>
-                  ) : m.archived ? (
-                    "Archived"
-                  ) : (
-                    "Ready for your plan"
-                  )}
-                </span>
-                <Button
-                  variant="icon ghost"
-                  aria-label={`Edit ${m.name}`}
-                  onClick={() => setEditor(m)}
-                >
-                  <Settings2 size={18} />
-                </Button>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
+      {[...groups]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([group, items]) => (
+          <section key={group} className="machine-group">
+            {grouping !== "none" && (
+              <SectionTitle
+                title={group}
+                extra={
+                  <span className="muted small">{items.length} machines</span>
+                }
+              />
+            )}
+            <div className="machine-grid">
+              {items.map((m) => {
+                const st = machineStats(s, m.id);
+                return (
+                  <Card key={m.id} className="machine-card">
+                    <div className="machine-card-top">
+                      <span className="icon-box">
+                        <Dumbbell />
+                      </span>
+                      <Button
+                        aria-label={`${m.favorite ? "Unfavorite" : "Favorite"} ${m.name}`}
+                        variant={`icon ghost ${m.favorite ? "accent" : ""}`}
+                        onClick={() =>
+                          void change((s) => {
+                            s.machines.find((x) => x.id === m.id)!.favorite =
+                              !m.favorite;
+                          }).catch(() => {})
+                        }
+                      >
+                        <Star
+                          size={20}
+                          fill={m.favorite ? "currentColor" : "none"}
+                        />
+                      </Button>
+                    </div>
+                    <button
+                      className="machine-title"
+                      onClick={() => setDetail(m.id)}
+                    >
+                      <h3>{m.name}</h3>
+                    </button>
+                    <p className="muted small">
+                      {m.area || "No area assigned"} · {m.type}
+                    </p>
+                    <div className="tag-row">
+                      {m.muscles.map((x, i) => (
+                        <span className="muscle-tag" key={i}>
+                          {x}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="machine-stats">
+                      <div>
+                        <strong>{st.sessions}</strong>
+                        <small>sessions</small>
+                      </div>
+                      <div>
+                        <strong>{st.sets}</strong>
+                        <small>working sets</small>
+                      </div>
+                      <div>
+                        <strong>{st.last ? formatDate(st.last) : "—"}</strong>
+                        <small>last used</small>
+                      </div>
+                    </div>
+                    <div className="machine-card-bottom">
+                      <span
+                        className={
+                          planned.has(m.id) ? "accent small" : "muted small"
+                        }
+                      >
+                        {planned.has(m.id) ? (
+                          <>
+                            <Check size={14} />
+                            Next workout
+                          </>
+                        ) : m.archived ? (
+                          "Archived"
+                        ) : (
+                          "Ready for your plan"
+                        )}
+                      </span>
+                      <Button
+                        variant="icon ghost"
+                        aria-label={`Edit ${m.name}`}
+                        onClick={() => setEditor(m)}
+                      >
+                        <Settings2 size={18} />
+                      </Button>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          </section>
+        ))}
       {!shown.length && (
         <Empty
           title="Make room for your equipment"

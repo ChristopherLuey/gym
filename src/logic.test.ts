@@ -11,6 +11,7 @@ import {
   plannedCompletion,
   weekStart,
   trainingFrequency,
+  weightTrend,
 } from "./logic";
 import { toKg, fromKg } from "./model";
 function completed() {
@@ -62,6 +63,58 @@ describe("double progression", () => {
   });
 });
 describe("workout calculations and machine isolation", () => {
+  it("records one best per exercise-machine pair when a session revisits the same setup", () => {
+    const { s, w, e } = completed();
+    const repeat = structuredClone(e);
+    repeat.id = "revisited";
+    repeat.sets.forEach((set) => {
+      set.kg = 35;
+    });
+    w.entries.push(repeat);
+    expect(records(s, w)).toHaveLength(1);
+    expect(records(s, w)[0]).toMatchObject({
+      kg: 35,
+      first: true,
+      previousKg: null,
+    });
+  });
+  it("includes inactive weeks through the current week in consistency charts", () => {
+    const { w } = completed();
+    w.finished = new Date("2026-10-06T12:00:00").getTime();
+    expect(trainingFrequency([w], new Date("2026-10-19T09:00:00"))).toEqual([
+      { date: "2026-10-05", value: 1 },
+      { date: "2026-10-12", value: 0 },
+      { date: "2026-10-19", value: 0 },
+    ]);
+  });
+  it("compares calendar-week averages and target direction without inventing missing trends", () => {
+    const s = seed(),
+      now = new Date("2026-10-19T22:00:00");
+    s.profile.targetKg = 65;
+    expect(weightTrend(s, now)).toMatchObject({
+      current: null,
+      previous: null,
+      delta: null,
+      direction: "unknown",
+    });
+    s.weights = [
+      { id: "old", date: "2026-10-05", kg: 99 },
+      { id: "prior", date: "2026-10-06", kg: 60 },
+      { id: "recent", date: "2026-10-13", kg: 61 },
+      { id: "today", date: "2026-10-19", kg: 63 },
+      { id: "future", date: "2026-10-20", kg: 90 },
+    ];
+    expect(weightTrend(s, now)).toMatchObject({
+      current: 62,
+      previous: 60,
+      delta: 2,
+      direction: "toward",
+      recentCount: 2,
+      priorCount: 1,
+    });
+    s.profile.targetKg = 58;
+    expect(weightTrend(s, now).direction).toBe("away");
+  });
   it("does not count repeating one day as completing other scheduled days", () => {
     const { s, w } = completed();
     const monday = weekStart();
@@ -101,7 +154,11 @@ describe("workout calculations and machine isolation", () => {
     w2.id = "next";
     w2.finished = w.finished! + 1000;
     w2.entries[0].sets.forEach((set) => (set.kg = 32.5));
-    expect(records(s, w2)[0]).toMatchObject({ first: false, kg: 32.5 });
+    expect(records(s, w2)[0]).toMatchObject({
+      first: false,
+      kg: 32.5,
+      previousKg: 30,
+    });
   });
   it("prefills the matching machine setup and keeps first sessions reduced", () => {
     const { s, w, e } = completed();

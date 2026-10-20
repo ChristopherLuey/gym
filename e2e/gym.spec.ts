@@ -38,6 +38,66 @@ async function settings(page: Page) {
     page.getByRole("heading", { name: "Your space. Your settings." }),
   ).toBeVisible();
 }
+test("onboarding units, equipment grouping, direct machine access and exercise notes persist", async ({
+  page,
+}, info) => {
+  await page.goto("./");
+  await page.getByLabel("Current weight (lb)").fill("135");
+  await page.getByLabel("Target weight (lb)").fill("145");
+  await page.getByLabel("Units", { exact: true }).selectOption("kg");
+  await expect(page.getByLabel("Current weight (kg)")).toHaveValue("61.2");
+  await expect(page.getByLabel("Target weight (kg)")).toHaveValue("65.8");
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByLabel("Organize machines by (optional)").selectOption("area");
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByRole("button", { name: "Let’s get stronger" }).click();
+  await page.locator(".exercise-preview.plan-link").first().click();
+  await expect(
+    page.getByRole("dialog", { name: "Incline chest press", exact: true }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/#Machines\?machine=m-press$/);
+  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
+  await expect(page.getByLabel("Group machines by")).toHaveValue("area");
+  await page.getByLabel("Group machines by").selectOption("type");
+  await nav(page, "Today");
+  await nav(page, "Machines");
+  await expect(page.getByLabel("Group machines by")).toHaveValue("type");
+  await page.getByLabel("Group machines by").selectOption("muscle");
+  await expect(page.locator(".machine-group").first()).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: `test-results/${info.project.name}-machine-groups.png`,
+    fullPage: true,
+  });
+  await nav(page, "Programs");
+  await page.locator(".library button").first().click();
+  await page
+    .getByLabel("Personal exercise notes")
+    .fill("Keep elbows comfortable");
+  await page
+    .getByRole("button", { name: "Save exercise notes", exact: true })
+    .click();
+  await expect(
+    page.getByText("Exercise notes saved.", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
+  await page.reload();
+  await page.locator(".library button").first().click();
+  await expect(page.getByLabel("Personal exercise notes")).toHaveValue(
+    "Keep elbows comfortable",
+  );
+  await expect(
+    page.getByRole("heading", { name: "Personal records by machine" }),
+  ).toBeVisible();
+  const accessibility = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+    .analyze();
+  expect(accessibility.violations.map((v) => v.id)).toEqual([]);
+});
 test("onboarding, full workout lifecycle, setup, replacement, history and offline", async ({
   page,
   context,
@@ -102,6 +162,38 @@ test("onboarding, full workout lifecycle, setup, replacement, history and offlin
   await page
     .getByRole("button", { name: "Resume workout", exact: true })
     .click();
+  await card.getByRole("button", { name: "+ Warm-up", exact: true }).click();
+  await expect(
+    card.getByRole("button", { name: "Set 1 type: warmup", exact: true }),
+  ).toBeVisible();
+  await card
+    .getByRole("button", { name: `Delete ${ex} set 1`, exact: true })
+    .click();
+  await expect(card.locator(".set-row")).toHaveCount(2);
+  await card
+    .getByRole("button", { name: `Move ${ex} down`, exact: true })
+    .click();
+  await expect(page.locator(".live-exercise").nth(1).locator("h2")).toHaveText(
+    ex,
+  );
+  await page
+    .locator(".live-exercise")
+    .nth(1)
+    .getByRole("button", { name: `Move ${ex} up`, exact: true })
+    .click();
+  await expect(card.locator("h2")).toHaveText(ex);
+  const originalCount = await page.locator(".live-exercise").count();
+  await page.getByRole("button", { name: "Add exercise", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Add to session", exact: true })
+    .click();
+  await expect(page.locator(".live-exercise")).toHaveCount(originalCount + 1);
+  const added = page.locator(".live-exercise").last();
+  await added.locator("summary").click();
+  await added
+    .getByRole("button", { name: "Remove exercise", exact: true })
+    .click();
+  await expect(page.locator(".live-exercise")).toHaveCount(originalCount);
   await card.getByRole("button", { name: "Add set", exact: true }).click();
   await expect(card.locator(".set-row")).toHaveCount(3);
   await card
@@ -175,6 +267,37 @@ test("onboarding, full workout lifecycle, setup, replacement, history and offlin
   ).toHaveValue("50");
   await context.setOffline(false);
   expect(errors).toEqual([]);
+});
+
+test("skipping weight and equipment keeps onboarding usable and assignments honest", async ({
+  page,
+}) => {
+  await page.goto("./");
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Skip machine setup", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByRole("button", { name: "Let’s get stronger" }).click();
+  await expect(page.locator(".exercise-preview").first()).toContainText(
+    "Choose equipment",
+  );
+  await nav(page, "Machines");
+  await expect(
+    page.getByRole("heading", { name: "Make room for your equipment" }),
+  ).toBeVisible();
+  await nav(page, "Today");
+  await page
+    .getByRole("button", { name: "Start workout", exact: true })
+    .click();
+  await expect(
+    page
+      .locator(".live-exercise")
+      .first()
+      .getByRole("button", { name: "Choose equipment", exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(page.locator(".live-exercise")).toHaveCount(6);
 });
 test("machine creation/edit, program assignment, nutrition, theme and backups", async ({
   page,
@@ -431,6 +554,27 @@ test("manifest, narrow layouts, empty analytics, reduced motion and invalid inpu
   await expect(page.getByLabel("Weight today (lb)")).toHaveValue("-1");
   await page.screenshot({
     path: `test-results/${info.project.name}-narrow.png`,
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 768, height: 1024 });
+  for (const name of [
+    "Today",
+    "Programs",
+    "Machines",
+    "Progress",
+    "Nutrition",
+  ]) {
+    await nav(page, name);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+      `Tablet ${name}`,
+    ).toBe(true);
+  }
+  await nav(page, "Today");
+  await page.screenshot({
+    path: `test-results/${info.project.name}-tablet.png`,
     fullPage: true,
   });
 });

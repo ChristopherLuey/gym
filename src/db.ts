@@ -179,7 +179,7 @@ export function change(fn: (s: State) => void): Promise<void> {
           throw new Error(
             "Storage is unavailable. Export your data before reloading.",
           );
-        const next = structuredClone(row.value);
+        const next = migrate(row.value);
         fn(next);
         validateState(next);
         await db.state.put({

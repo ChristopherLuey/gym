@@ -130,6 +130,7 @@ export const profileSchema = z.object({
   theme: z.enum(["dark", "light"]),
   rest: num,
   onboarded: z.boolean(),
+  equipmentGroup: z.enum(["none", "area", "type", "muscle"]).default("none"),
 });
 export const stateSchema = z.object({
   schema: z.literal(2),

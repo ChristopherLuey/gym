@@ -31,14 +31,14 @@ The service worker is built for production previews/deployments, not development
 
 ## Features
 
-- Onboarding with current weight, units, experience, days, session target, available machines, and program preview.
-- Today view with a real machine plan, session progress, recent machines, and repeat-last-workout.
+- Onboarding with current weight, units, experience, days, session target, available machines, optional equipment grouping, and program preview. Weight and machine setup can be skipped; changing units converts entered values.
+- Today view with a real machine plan, session progress, direct access to recent/planned machines, actual strength improvements, and repeat-last-workout. The plan follows the active session and its equipment substitutions.
 - Live workouts with pause/resume, persistent active sessions, warm-up/working sets, RIR, configurable rest, notes, setup details, conservative progression, and completion summaries.
 - Equipment replacement preserves completed sets on the original equipment. The replacement begins a distinct history.
-- Editable/custom programs and exercises, muscle coverage, technique instructions, machine assignments, and introductory volume.
-- Machines with custom names, areas, type, brand/model, settings, local photos, favorites, archiving, and usage totals.
+- Editable/custom programs and exercises, muscle coverage, technique instructions, personal exercise notes, per-machine records/setup history, machine assignments, and introductory volume.
+- Machines with custom names, area/type/muscle grouping, brand/model, settings, local photos, favorites, archiving, and usage totals.
 - Weight, training volume, machine/exercise strength, machine usage, records, optional measurements, and history.
-- Simple protein/calorie entries, reusable meals, weight averages, adjustable goals, and optional detailed tracking.
+- Simple protein/calorie entries, reusable meals, weekly weight averages and direction relative to a target, adjustable goals, and optional detailed tracking.
 - Dark/light themes, installable PWA, offline shell, responsive layouts, local storage, validated export/import, and recovery snapshots.
 
 ## Privacy and backups
@@ -64,6 +64,8 @@ Timers use absolute timestamps and recover after backgrounding. iOS can suspend 
 - Working volume = sum of load × repetitions for checked working sets with at least one repetition. Warm-ups and unfinished sets are excluded.
 - Machine usage frequency counts completed workouts containing at least one completed working set for that equipment. Multiple exercises on one machine count as one session.
 - A load record is the heaviest completed working set on the same exercise and machine. First logged bests are labeled as baselines, not improvement over nonexistent history.
+- Revisiting the same exercise and machine in one session produces one load record. Improvement summaries compare against earlier completed sessions and exclude first baselines.
+- Weekly frequency charts retain inactive weeks. Weight trends compare the current seven calendar days (including today) with the preceding seven; they exclude future entries and require measurements in both periods. Target direction compares each average's distance from the target. Sparse or uneven weigh-ins can limit interpretation.
 - Different machines are not interchangeable resistance measurements. Historical names and setup values are snapshots; IDs retain association after renaming or archiving.
 - Muscle coverage counts direct sets. Secondary muscles are documented but excluded from coverage totals to avoid double-counting.
 - Double progression requires all prescribed working sets to reach the upper rep bound at one load, without high fatigue or recorded zero RIR. It suggests the machine's configured increment; the user must accept or manually override it.

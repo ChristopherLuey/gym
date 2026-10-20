@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { ArrowRight, Check, Dumbbell, ChevronLeft } from "lucide-react";
-import { type State, type Profile, days, toKg, uid, localDay } from "./model";
+import {
+  type State,
+  type Profile,
+  days,
+  toKg,
+  fromKg,
+  uid,
+  localDay,
+} from "./model";
 import { change } from "./db";
 import { Button, Field } from "./ui";
 export function Onboarding({ state }: { state: State }) {
@@ -97,9 +105,20 @@ export function Onboarding({ state }: { state: State }) {
                   <select
                     value={profile.units}
                     onChange={(e) => {
-                      patch({ units: e.target.value as Profile["units"] });
-                      setWeight("");
-                      setTarget("");
+                      const units = e.target.value as Profile["units"];
+                      if (weight)
+                        setWeight(
+                          String(
+                            fromKg(toKg(Number(weight), profile.units), units),
+                          ),
+                        );
+                      if (target)
+                        setTarget(
+                          String(
+                            fromKg(toKg(Number(target), profile.units), units),
+                          ),
+                        );
+                      patch({ units });
                     }}
                   >
                     <option value="lb">Pounds (lb)</option>
@@ -188,6 +207,25 @@ export function Onboarding({ state }: { state: State }) {
                       {n} minutes
                     </option>
                   ))}
+                </select>
+              </Field>
+              <Field
+                label="Organize machines by (optional)"
+                hint="You can name and change gym areas on the Machines screen."
+              >
+                <select
+                  value={profile.equipmentGroup}
+                  onChange={(e) =>
+                    patch({
+                      equipmentGroup: e.target
+                        .value as Profile["equipmentGroup"],
+                    })
+                  }
+                >
+                  <option value="none">Simple equipment list</option>
+                  <option value="area">Gym area</option>
+                  <option value="type">Equipment type</option>
+                  <option value="muscle">Muscle group</option>
                 </select>
               </Field>
               <Field

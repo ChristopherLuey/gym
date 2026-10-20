@@ -29,10 +29,20 @@ export function ExerciseDetail({
   onClose: () => void;
 }) {
   const e = s.exercises.find((e) => e.id === id);
+  const [notes, setNotes] = useState(e?.notes ?? ""),
+    [saved, setSaved] = useState(false);
   if (!e) return null;
   const history = s.history.flatMap((w) =>
     w.entries.filter((x) => x.exerciseId === id).map((entry) => ({ w, entry })),
   );
+  const bests = new Map<string, { name: string; kg: number }>();
+  for (const { entry } of history) {
+    const sets = working(entry);
+    if (!sets.length) continue;
+    const kg = Math.max(...sets.map((s) => s.kg));
+    if (!bests.has(entry.machineId) || kg > bests.get(entry.machineId)!.kg)
+      bests.set(entry.machineId, { name: entry.machineName, kg });
+  }
   return (
     <Modal title={e.name} onClose={onClose}>
       <div className="tag-row">
@@ -49,6 +59,23 @@ export function ExerciseDetail({
       </div>
       <h3>Find your setup</h3>
       <p>{e.equipment}</p>
+      <h3>Your prescriptions</h3>
+      {s.programs
+        .filter((p) => !p.archived)
+        .flatMap((p) =>
+          p.items
+            .filter((i) => i.exerciseId === id)
+            .map((i) => (
+              <p className="small" key={`${p.id}-${i.id}`}>
+                <strong>{p.name}</strong> ·{" "}
+                {s.profile.intro ? Math.min(i.sets, 2) : i.sets} × {i.min}–
+                {i.max} · {i.rest}s rest
+                <br />
+                {s.machines.find((m) => m.id === i.machineId)?.name ??
+                  "Unassigned equipment"}
+              </p>
+            )),
+        )}
       <h3>Move with control</h3>
       <p>{e.instructions}</p>
       <h3>Common mistakes</h3>
@@ -60,11 +87,56 @@ export function ExerciseDetail({
       <h3>Alternatives</h3>
       <p>
         {e.alternatives
-          .map((id) => s.exercises.find((x) => x.id === id)?.name)
+          .map((id) => {
+            const alternative = s.exercises.find((x) => x.id === id);
+            return alternative
+              ? `${alternative.name} (${alternative.equipment})`
+              : null;
+          })
           .filter(Boolean)
           .join(" · ") ||
           "Choose another exercise for the same muscle group from your library."}
       </p>
+      <h3>Personal records by machine</h3>
+      {bests.size ? (
+        [...bests].map(([machine, best]) => (
+          <div className="list-line" key={machine}>
+            <span>{best.name}</span>
+            <strong>
+              {fromKg(best.kg, s.profile.units)} {s.profile.units}
+            </strong>
+          </div>
+        ))
+      ) : (
+        <p className="muted">
+          Complete a working set to establish your first load record.
+        </p>
+      )}
+      <p className="small muted">
+        Heaviest completed working load. Each machine keeps its own record.
+      </p>
+      <Field label="Personal exercise notes">
+        <textarea
+          value={notes}
+          maxLength={2000}
+          onChange={(ev) => {
+            setNotes(ev.target.value);
+            setSaved(false);
+          }}
+          placeholder="Your cues, preferences, or limitations"
+        />
+      </Field>
+      <Button
+        onClick={async () => {
+          await change((s) => {
+            s.exercises.find((x) => x.id === id)!.notes = notes;
+          });
+          setSaved(true);
+        }}
+      >
+        Save exercise notes
+      </Button>
+      {saved && <p role="status">Exercise notes saved.</p>}
       <h3>Exercise history</h3>
       {history.length ? (
         history
@@ -75,6 +147,13 @@ export function ExerciseDetail({
               <div>
                 <strong>{entry.machineName}</strong>
                 <small>{new Date(w.finished!).toLocaleDateString()}</small>
+                {Object.entries(entry.setup)
+                  .filter(([, value]) => value)
+                  .map(([key, value]) => (
+                    <small key={key}>
+                      {key}: {value}
+                    </small>
+                  ))}
               </div>
               <span>
                 {working(entry)
