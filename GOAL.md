@@ -204,13 +204,13 @@ Preferred: React, TypeScript, Vite, Tailwind or equivalent maintainable styling,
 
 ## 14. Deployment checklist
 
-- [ ] Inspect account and `ChristopherLuey/gym`; determine absence versus access restriction.
-- [ ] Preserve valuable pre-existing work; create the repository only if absent.
+- [x] Inspect account and `ChristopherLuey/gym`; determine absence versus access restriction.
+- [x] Preserve valuable pre-existing work; create the repository only if absent (authenticated inspection confirmed absence).
 - [x] Configure Vite base `/gym/` and resilient static-site navigation (verified in local production builds).
-- [x] Configure GitHub Actions for install, type/build checks, unit and end-to-end tests, build, artifact upload, and Pages deployment (workflow written; remote execution remains pending).
-- [ ] Configure Pages to publish through Actions with necessary least-privilege workflow permissions.
-- [ ] Commit and push reviewed source without personal data/secrets.
-- [ ] Confirm passing workflow and successful deployment.
+- [x] Configure GitHub Actions for install, type/build checks, unit and end-to-end tests, build, artifact upload, and Pages deployment.
+- [x] Configure Pages to publish through Actions with necessary least-privilege workflow permissions.
+- [x] Commit and push reviewed source without personal workout history or secrets.
+- [x] Confirm passing workflow and successful deployment (first run 39720100500).
 - [ ] Open and test the live production URL, assets, navigation, PWA resources, and offline behavior.
 - [ ] Confirm future pushes to the deployment branch trigger redeployment.
 

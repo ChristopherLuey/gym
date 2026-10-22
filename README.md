@@ -2,9 +2,9 @@
 
 A local-first, mobile workout and gym-machine planner. Built for quick sets, familiar equipment, and consistent training.
 
-**Deployment target:** https://christopherluey.github.io/gym/
+**Live app:** https://christopherluey.github.io/gym/
 
-**Repository target:** https://github.com/ChristopherLuey/gym
+**Repository:** https://github.com/ChristopherLuey/gym
 
 The complete requirements and acceptance contract are in [GOAL.md](GOAL.md). Deployment is only considered complete after the Actions deployment and live URL have been verified. See [STATUS.md](STATUS.md) for verified progress and remaining work.
 
@@ -28,6 +28,8 @@ npm run preview
 ```
 
 The service worker is built for production previews/deployments, not development mode. Playwright uses disposable browser profiles and synthetic data. Tests cover desktop Chromium, iPhone-sized Chromium, and iPhone-sized WebKit. WebKit emulation is not a physical iPhone test.
+
+For a real production-update check, run `node scripts/verify-production-update.mjs` before publishing a changed application build. It saves a synthetic active workout in an isolated browser, then waits. After deployment succeeds, press Enter. The check verifies deferred update activation, retained history/settings, the changed JavaScript bundle, and persistent offline logging. Its report and screenshot are written under ignored `test-results/`.
 
 ## Features
 

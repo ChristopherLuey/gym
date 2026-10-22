@@ -20,6 +20,23 @@ afterEach(async () => {
   for (const db of databases.splice(0)) await db.delete();
 });
 describe("persistence and recovery", () => {
+  it("rejects backups with no exercise library or non-renderable timestamps before replacing data", async () => {
+    const db = database(),
+      original = seed();
+    await db.state.put({ id: "main", value: original, revision: 1 });
+    const empty = seed();
+    empty.exercises = [];
+    empty.programs = [];
+    await expect(restore(db, empty)).rejects.toThrow();
+    for (const invalid of [Infinity, 1e30]) {
+      const bad = seed();
+      bad.active = startWorkout(bad, bad.programs[0]);
+      bad.active.started = invalid;
+      await expect(restore(db, bad)).rejects.toThrow();
+    }
+    expect((await db.state.get("main"))?.value).toEqual(original);
+    expect(await db.recovery.count()).toBe(0);
+  });
   it("upgrades a real version-one database while retaining active work and settings", async () => {
     const name = `test-${crypto.randomUUID()}`,
       legacy = new Dexie(name),

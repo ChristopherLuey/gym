@@ -6,10 +6,10 @@ This file records evidence, not assumed completion. The full acceptance contract
 
 - Detailed product goal saved and registered as the active task goal.
 - Connected GitHub account verified as ChristopherLuey.
-- `ChristopherLuey/gym` lookup returned 404; repository existence/creation has not yet been resolved through authenticated administration access.
+- Repository absence was confirmed through authenticated administration access. The public `ChristopherLuey/gym` repository was created and source pushed to `main`; no existing remote work was overwritten.
 - Today, live workouts, programs/exercise library, machines, progress, nutrition, and settings implemented with persistent local data.
 - Production TypeScript check and Vite build passed. PWA shell precaches all application chunks and icons under `/gym/`.
-- 25 unit tests passed: progression, current fatigue/prescription changes, working volume, machine isolation, deduplicated records, scheduled completion, inactive weeks, calendar-based weight trends, pause duration, units, persistence, a real IndexedDB version-one upgrade, backup validation, recovery, transactional rollback after a simulated storage failure, and protection against importing over an active session.
+- 26 unit tests passed: progression, current fatigue/prescription changes, working volume, machine isolation, deduplicated records, scheduled completion, inactive weeks, calendar-based weight trends, pause duration, units, persistence, a real IndexedDB version-one upgrade, backup validation, recovery, transactional rollback after a simulated storage failure, protection against importing over an active session, and rejection of empty exercise libraries/non-renderable timestamps.
 - Dependency audit reported zero known vulnerabilities after dependency updates.
 - 18 end-to-end browser tests passed across desktop Chromium, iPhone 13-sized Chromium, and iPhone 13-sized WebKit (six workflows per browser configuration).
 - Browser scenarios cover onboarding and skipped weight/equipment, onboarding unit conversion, equipment grouping, direct links to machine details, saved exercise notes, machine creation/edit/favorite/archive, program assignment and custom programs, start/pause/resume/finish/discard/repeat, warm-ups, exercise addition/removal/reordering, set editing/deletion, setup snapshots, notes/fatigue, reload recovery, equipment replacement, records/charts/history, protein/weight logging, theme switching, export/import of completed history and machines, malformed import rejection, recovery copies, and offline reopening.
@@ -22,13 +22,13 @@ This file records evidence, not assumed completion. The full acceptance contract
 
 Local production preview: http://127.0.0.1:4174/gym/ while its preview process is running. This is a review aid, not the required public deployment.
 
-## Access dependency
+## Deployment
 
-The GitHub connector has repository-content tools but no repository-creation or Pages-administration tool. Local Git credential lookup returned no usable credential. The available in-app browser opened GitHub's sign-in page. The user has been asked to sign in there; no credentials have been requested in chat or saved into source.
+The GitHub CLI is authenticated as ChristopherLuey using the operating system credential store. Authentication was completed through GitHub's device flow. No device codes or credentials are committed. The repository-local Git helper uses that authenticated CLI.
 
-An alternative is now prepared: the official GitHub CLI was downloaded outside this repository and its SHA-256 checksum verified against the release checksum file. Its browser/device authorization flow has been initiated so the user can authorize the deployment machine through their usual browser. Authorization and repository access must be verified before publishing; no device codes or credentials are committed.
+GitHub Pages uses `build_type: workflow`, with HTTPS enforced. The first [Actions run](https://github.com/ChristopherLuey/gym/actions/runs/39720100500) passed its checks and deployment for commit `0926311`. The production URL returns HTTP 200. Every push to `main` runs the checked-in test/build/deployment workflow.
 
-The source is prepared in a local Git repository on `main`. Repository creation or authenticated inspection, push, Pages configuration, Actions verification, and production verification remain outstanding. **The app is not deployed and the overall goal is not complete.**
+A production browser session has completed onboarding, logged a set and machine settings, and retained the active workout after refresh. Final production browser coverage and the update-during-workout scenario are still being verified before closing the delivery goal.
 
 ## Verification limits
 

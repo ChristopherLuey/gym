@@ -2,6 +2,7 @@ import { z } from "zod";
 const id = z.string().min(1).max(100);
 const text = z.string().max(5000);
 const num = z.number().finite().nonnegative();
+const timestamp = num.max(8_640_000_000_000_000);
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 export const setupSchema = z.object({
   seat: text,
@@ -105,17 +106,17 @@ export const workoutSchema = z.object({
   id,
   programId: text,
   name: text,
-  started: z.number(),
-  finished: z.number().nullable(),
-  pausedAt: z.number().nullable(),
+  started: timestamp,
+  finished: timestamp.nullable(),
+  pausedAt: timestamp.nullable(),
   pausedMs: num,
-  restUntil: z.number().nullable(),
+  restUntil: timestamp.nullable(),
   entries: z.array(entrySchema),
   notes: text,
 });
 export const profileSchema = z.object({
   name: text,
-  heightCm: z.number().positive(),
+  heightCm: z.number().finite().positive(),
   units: z.enum(["kg", "lb"]),
   experience: z.enum(["beginner", "returning", "experienced"]),
   days: z.array(z.number().int().min(0).max(6)).min(1),
@@ -123,7 +124,7 @@ export const profileSchema = z.object({
   targetKg: num.nullable(),
   limitations: text,
   intro: z.boolean(),
-  createdAt: z.number(),
+  createdAt: timestamp,
   proteinGoal: num.nullable(),
   calorieGoal: num.nullable(),
   tracking: z.boolean(),
@@ -136,7 +137,7 @@ export const stateSchema = z.object({
   schema: z.literal(2),
   profile: profileSchema,
   machines: z.array(machineSchema),
-  exercises: z.array(exerciseSchema),
+  exercises: z.array(exerciseSchema).min(1),
   programs: z.array(programSchema),
   active: workoutSchema.nullable(),
   history: z.array(workoutSchema),

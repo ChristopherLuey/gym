@@ -219,6 +219,25 @@ test("onboarding, full workout lifecycle, setup, replacement, history and offlin
     .getByRole("button", { name: `Complete ${ex} set 1`, exact: true })
     .click();
   await page.getByRole("button", { name: "Skip", exact: true }).click();
+  await replacement
+    .getByRole("button", { name: "Machine occupied?", exact: true })
+    .click();
+  await page.getByLabel("Exercise", { exact: true }).selectOption("dbpress");
+  await page.getByLabel("Replacement machine").selectOption("m-dumbbell");
+  await page.getByRole("button", { name: "Use this setup" }).click();
+  await expect(replacement.locator("h2")).toHaveText(ex);
+  const alternative = page.locator(".live-exercise").nth(2);
+  await expect(alternative.locator("h2")).toHaveText("Incline dumbbell press");
+  await alternative
+    .getByLabel("Incline dumbbell press set 1 weight", { exact: true })
+    .fill("20");
+  await alternative
+    .getByRole("button", {
+      name: "Complete Incline dumbbell press set 1",
+      exact: true,
+    })
+    .click();
+  await page.getByRole("button", { name: "Skip", exact: true }).click();
   await page.screenshot({
     path: `test-results/${info.project.name}-workout.png`,
     fullPage: true,
@@ -308,6 +327,12 @@ test("machine creation/edit, program assignment, nutrition, theme and backups", 
   await page.getByLabel("Machine name").fill("Chest press near mirrors");
   await page.getByLabel("Gym area", { exact: true }).fill("Chest corner");
   await page.getByLabel("Seat position").fill("3");
+  await page
+    .getByLabel("Machine photo (optional)")
+    .setInputFiles("public/icon-192.png");
+  await expect(
+    page.getByRole("img", { name: "Chest press near mirrors" }),
+  ).toHaveAttribute("src", /^data:image\/png;base64,/);
   await page.getByRole("button", { name: "Save machine", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Chest press near mirrors" }),
@@ -359,8 +384,36 @@ test("machine creation/edit, program assignment, nutrition, theme and backups", 
   await page.getByLabel("Food or meal (optional)").fill("Lunch");
   await page.getByLabel("Protein (g)", { exact: true }).fill("35");
   await page.getByLabel("Calories (optional)", { exact: true }).fill("600");
+  await page.getByLabel("Save as a frequent meal").check();
   await page.getByRole("button", { name: "Add entry", exact: true }).click();
   await expect(page.getByText("35 g protein · 600 kcal")).toBeVisible();
+  await page.getByRole("button", { name: "+ Lunch 35 g", exact: true }).click();
+  await expect(page.getByText("35 g protein · 600 kcal")).toHaveCount(2);
+  await page.getByRole("button", { name: "Adjust goals", exact: true }).click();
+  await page.getByLabel("Protein goal (g/day)").fill("120");
+  await page.getByLabel("Calorie target (optional)").fill("2400");
+  await page.getByLabel("Target weight (lb, optional)").fill("145");
+  await page.getByRole("button", { name: "Save goals", exact: true }).click();
+  await expect(page.getByText("Optional goal: 2400 kcal")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Skip detailed food tracking", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Log what you need" }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Enable simple food tracking", exact: true })
+    .click();
+  await nav(page, "Progress");
+  await page
+    .getByRole("button", { name: "+ Add measurement", exact: true })
+    .click();
+  await page.getByLabel("Body area").selectOption("Arms");
+  await page.getByLabel("Measurement (cm)").fill("32.5");
+  await page
+    .getByRole("button", { name: "Save measurement", exact: true })
+    .click();
+  await expect(page.getByText("32.5 cm", { exact: true })).toBeVisible();
   await settings(page);
   await page.getByRole("button", { name: "Daylight" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
@@ -375,6 +428,17 @@ test("machine creation/edit, program assignment, nutrition, theme and backups", 
   expect(path).toBeTruthy();
   const content = await readFile(path!, "utf8");
   expect(JSON.parse(content).data.history).toHaveLength(1);
+  expect(JSON.parse(content).data.measurements[0].cm).toBe(32.5);
+  expect(
+    JSON.parse(content).data.meals.some(
+      (m: { name: string }) => m.name === "Lunch",
+    ),
+  ).toBe(true);
+  expect(
+    JSON.parse(content).data.machines.find(
+      (m: { name: string }) => m.name === "Chest press near mirrors",
+    ).photo,
+  ).toMatch(/^data:image\/png;base64,/);
   expect(
     JSON.parse(content).data.machines.some(
       (m: { name: string }) => m.name === "Chest press near mirrors",
