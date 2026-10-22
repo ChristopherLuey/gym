@@ -6,7 +6,7 @@ A local-first, mobile workout and gym-machine planner. Built for quick sets, fam
 
 **Repository:** https://github.com/ChristopherLuey/gym
 
-The complete requirements and acceptance contract are in [GOAL.md](GOAL.md). Deployment is only considered complete after the Actions deployment and live URL have been verified. See [STATUS.md](STATUS.md) for verified progress and remaining work.
+The complete requirements and acceptance contract are in [GOAL.md](GOAL.md). GitHub Pages deployment and the live application have been verified. See [STATUS.md](STATUS.md) for test evidence and verification limits.
 
 ## Run locally
 
@@ -91,7 +91,7 @@ React + TypeScript + Vite, accessible native form controls and dialogs, Lucide i
 
 The application is configured specifically for `/gym/`, including manifest scope, start URL, icons, hashed assets, and service-worker fallback. Hash-based navigation avoids static-host deep-link failures.
 
-Create or inspect `ChristopherLuey/gym`, push this source to `main`, and select **Settings → Pages → Source: GitHub Actions**. `.github/workflows/deploy.yml` runs unit tests, type checks/build, and browser tests before uploading and deploying. Pull requests run checks without deployment. Every push to `main` triggers the same gate and deployment.
+`ChristopherLuey/gym` is configured with **Settings → Pages → Source: GitHub Actions** and HTTPS enforced. `.github/workflows/deploy.yml` runs unit tests, type checks/build, and browser tests before uploading and deploying. Pull requests run checks without deployment. Every push to `main` triggers the same gate and deployment.
 
 After a successful workflow, verify the live URL, `/gym/manifest.webmanifest`, icons, offline reload, navigation, and a saved workout. Never put personal access tokens or backend secrets in this client application.
 

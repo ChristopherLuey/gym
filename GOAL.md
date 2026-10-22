@@ -1,6 +1,6 @@
 # GYM — complete product goal and acceptance contract
 
-Status: active; implementation and deployment are not yet complete.
+Status: implemented and deployed; production verification completed on October 21, 2026 (Pacific time). See [STATUS.md](STATUS.md) for evidence and the physical-iPhone verification limit.
 
 ## 1. Mission and completion standard
 
@@ -211,33 +211,33 @@ Preferred: React, TypeScript, Vite, Tailwind or equivalent maintainable styling,
 - [x] Configure Pages to publish through Actions with necessary least-privilege workflow permissions.
 - [x] Commit and push reviewed source without personal workout history or secrets.
 - [x] Confirm passing workflow and successful deployment (first run 39720100500).
-- [ ] Open and test the live production URL, assets, navigation, PWA resources, and offline behavior.
-- [ ] Confirm future pushes to the deployment branch trigger redeployment.
+- [x] Open and test the live production URL, assets, navigation, PWA resources, and offline behavior (18 production browser tests and a real version-update check passed).
+- [x] Confirm future pushes to the deployment branch trigger redeployment (successive push-triggered runs 39720100500 and 39720757504 deployed successfully).
 
 ## 15. Verification matrix
 
 Every required scenario must have recorded evidence or an explicit verification limitation:
 
-- [ ] First-time onboarding, skips, validation, program preview.
-- [ ] Create/edit/archive/search/favorite machines and record settings.
-- [ ] Assign machines and plan a workout around them.
-- [ ] Start/pause/resume/finish/discard/repeat workouts.
-- [ ] Add/edit/delete/reorder exercises and sets; warmups and RIR.
-- [ ] Complete sets, run rest timer, prefill prior results/settings.
-- [ ] Recover interrupted sessions and refresh without data loss.
-- [ ] Replace unavailable equipment/exercises while preserving existing logs.
-- [ ] Record truthful personal records and completion summary.
-- [ ] Exercise/machine progression charts and machine-use analytics.
-- [ ] Bodyweight, measurements, protein/calorie logs and meals.
-- [ ] Export/import/recover all personal data; reject malformed backups safely.
-- [ ] Offline reopening and workout logging after initial cache.
-- [ ] PWA manifest/icons/installability/update behavior and `/gym/` paths.
-- [ ] Light/dark modes; reduced motion; keyboard/screen-reader basics.
-- [ ] Narrow modern-iPhone emulation, tablet, and desktop layouts.
-- [ ] Actual mobile Safari when available; clearly distinguish emulation from real-device testing.
-- [ ] Empty states, malformed numbers, storage failure, missing equipment, sparse history.
-- [ ] Unit tests: progression, calculations, machine use, persistence/migrations, backup validation/import/export.
-- [ ] Production smoke tests; no unexpected browser errors.
+- [x] First-time onboarding, skips, validation, program preview.
+- [x] Create/edit/archive/search/favorite machines and record settings, including local photos.
+- [x] Assign machines and plan a workout around them.
+- [x] Start/pause/resume/finish/discard/repeat workouts.
+- [x] Add/edit/delete sets; add/edit/reorder/remove exercises; warmups and RIR.
+- [x] Complete sets, run rest timer, prefill prior results/settings.
+- [x] Recover interrupted sessions and refresh without data loss.
+- [x] Replace unavailable equipment/exercises while preserving existing logs.
+- [x] Record truthful personal records and completion summary (unit tests distinguish baselines from improvements).
+- [x] Exercise/machine progression charts and machine-use analytics.
+- [x] Bodyweight, measurements, protein/calorie logs and reusable meals.
+- [x] Export/import/recover all personal data; reject malformed backups safely.
+- [x] Offline reopening and workout logging after initial cache.
+- [x] PWA manifest/icons/service worker/update behavior and `/gym/` paths; native iPhone installation has the device limit below.
+- [x] Light/dark modes, reduced motion, accessible names and native controls; automated WCAG scans passed. Manual assistive-technology testing is not claimed.
+- [x] Narrow modern-iPhone emulation, tablet, and desktop layouts.
+- [ ] Physical iPhone Safari and Add to Home Screen installation: hardware unavailable in this Windows environment. iPhone-sized Chromium and WebKit passed; these do not substitute for a physical-device test. This conditional verification limit remains explicit.
+- [x] Empty states, malformed numbers, storage failure, missing equipment, sparse history.
+- [x] Unit tests: progression, calculations, machine use, persistence/migrations, backup validation/import/export (26 passing).
+- [x] Full production browser workflows passed (18 tests); no unexpected browser errors. Update activation was deferred until the workout finished, then history/settings and offline logging survived the changed application build.
 
 ## 16. Final definition of done and report
 
