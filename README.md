@@ -93,6 +93,8 @@ Create or inspect `ChristopherLuey/gym`, push this source to `main`, and select 
 
 After a successful workflow, verify the live URL, `/gym/manifest.webmanifest`, icons, offline reload, navigation, and a saved workout. Never put personal access tokens or backend secrets in this client application.
 
+If a connected GitHub integration cannot create repositories or manage Pages, authenticate the official GitHub CLI on the deployment machine with `gh auth login --hostname github.com --git-protocol https --web --skip-ssh-key --scopes workflow`. Complete the one-time device authorization in your usual browser as ChristopherLuey. This is separate from connector authentication. Keep credentials in the operating system credential store, outside this repository. After authentication, repository creation and Pages configuration can be completed through `gh`; source pushes and the checked-in workflow handle subsequent deployments.
+
 ## Development conventions
 
 Use `npm run check` for typing and `npm test` for domain/storage tests. `npx prettier --write src e2e` formats source. Icons are original vector artwork in `public/icon.svg`; regenerate PNG sizes with `node scripts/icons.mjs`. No third-party exercise imagery is bundled.

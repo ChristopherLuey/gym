@@ -26,6 +26,8 @@ Local production preview: http://127.0.0.1:4174/gym/ while its preview process i
 
 The GitHub connector has repository-content tools but no repository-creation or Pages-administration tool. Local Git credential lookup returned no usable credential. The available in-app browser opened GitHub's sign-in page. The user has been asked to sign in there; no credentials have been requested in chat or saved into source.
 
+An alternative is now prepared: the official GitHub CLI was downloaded outside this repository and its SHA-256 checksum verified against the release checksum file. Its browser/device authorization flow has been initiated so the user can authorize the deployment machine through their usual browser. Authorization and repository access must be verified before publishing; no device codes or credentials are committed.
+
 The source is prepared in a local Git repository on `main`. Repository creation or authenticated inspection, push, Pages configuration, Actions verification, and production verification remain outstanding. **The app is not deployed and the overall goal is not complete.**
 
 ## Verification limits
