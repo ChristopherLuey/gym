@@ -1,18 +1,9 @@
-import {
-  Play,
-  ArrowUpRight,
-  CalendarDays,
-  Check,
-  Flame,
-  Dumbbell,
-  ArrowRight,
-} from "lucide-react";
+import { Play, ArrowRight, CalendarDays, Check, RotateCcw } from "lucide-react";
 import {
   type State,
   type Program,
   formatDate,
   fromKg,
-  days,
   localDay,
 } from "./model";
 import {
@@ -24,15 +15,9 @@ import {
   plannedCompletion,
   weightTrend,
 } from "./logic";
-import {
-  Card,
-  Heading,
-  Stat,
-  SectionTitle,
-  Button,
-  Empty,
-  ArrowLink,
-} from "./ui";
+import { Card, Heading, SectionTitle, Button, Empty, ArrowLink } from "./ui";
+import { MachineVisual } from "./MachineVisual";
+
 export function Today({
   state: s,
   start,
@@ -46,28 +31,15 @@ export function Today({
   showWorkout: (id: string) => void;
   openMachine: (id: string) => void;
 }) {
-  const next = nextProgram(s),
-    weekly = weekHistory(s),
-    last = [...s.history]
-      .sort((a, b) => (a.finished ?? 0) - (b.finished ?? 0))
-      .at(-1),
-    weight = [...s.weights].sort((a, b) => a.date.localeCompare(b.date)).at(-1),
-    trend = weightTrend(s),
-    used = s.machines
-      .map((m) => ({ m, stats: machineStats(s, m.id) }))
-      .filter((x) => x.stats.last)
-      .sort((a, b) => b.stats.last! - a.stats.last!)
-      .slice(0, 3),
-    pb = last ? records(s, last) : [],
-    today = next && localDay(next.date) === localDay();
-  const improvements = [...s.history]
-    .sort((a, b) => (b.finished ?? 0) - (a.finished ?? 0))
-    .flatMap((w) =>
-      records(s, w)
-        .filter((r) => !r.first)
-        .map((r) => ({ ...r, date: w.finished! })),
-    )
-    .slice(0, 3);
+  const next = nextProgram(s);
+  const last = [...s.history].sort(
+    (a, b) => (b.finished ?? 0) - (a.finished ?? 0),
+  )[0];
+  const weight = [...s.weights].sort((a, b) => b.date.localeCompare(a.date))[0];
+  const trend = weightTrend(s);
+  const { planned, matched, extra } = plannedCompletion(s);
+  const weekly = weekHistory(s);
+  const today = next && localDay(next.date) === localDay();
   const plan = s.active
     ? s.active.entries.map((e) => ({
         id: e.id,
@@ -77,89 +49,63 @@ export function Today({
         sets: e.targetSets,
         min: e.min,
         max: e.max,
-        muscles: e.muscles,
+        done: e.sets.length > 0 && e.sets.every((s) => s.done),
       }))
-    : (next?.program.items ?? []).map((item) => {
-        const e = s.exercises.find((e) => e.id === item.exerciseId),
-          m = s.machines.find((m) => m.id === item.machineId && !m.archived);
-        return {
-          ...item,
-          name: e?.name ?? "Exercise",
-          machineName: m?.name ?? "Choose equipment in your session",
-          sets: s.profile.intro ? Math.min(item.sets, 2) : item.sets,
-          muscles: e?.muscles ?? [],
-        };
-      });
-  const { planned, matched, extra } = plannedCompletion(s);
+    : (next?.program.items ?? []).map((p) => ({
+        ...p,
+        name:
+          s.exercises.find((e) => e.id === p.exerciseId)?.name ?? "Exercise",
+        machineName:
+          s.machines.find((m) => m.id === p.machineId && !m.archived)?.name ??
+          "Choose equipment in your session",
+        sets: s.profile.intro ? Math.min(p.sets, 2) : p.sets,
+        done: false,
+      }));
+  const first = plan.find((p) => !p.done) ?? plan[0];
+  const used = s.machines
+    .map((m) => ({ m, stats: machineStats(s, m.id) }))
+    .filter((x) => x.stats.last)
+    .sort((a, b) => b.stats.last! - a.stats.last!)
+    .slice(0, 3);
+  const improvements = [...s.history]
+    .sort((a, b) => (b.finished ?? 0) - (a.finished ?? 0))
+    .flatMap((w) => records(s, w).filter((r) => !r.first))
+    .slice(0, 3);
   return (
-    <>
+    <div className="simple-today">
       <Heading
-        eyebrow={new Date()
-          .toLocaleDateString(undefined, {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-          })
-          .toUpperCase()}
+        eyebrow={new Date().toLocaleDateString(undefined, {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+        })}
         title={`Let’s build, ${s.profile.name || "you"}.`}
-        subtitle="Small steps. Stronger every week."
-        action={
-          <span className="status-pill">
-            <span />
-            Your space to grow
-          </span>
-        }
+        subtitle="Your next step is all you need."
       />
-      <div className="today-grid">
-        <div className="hero card">
-          <div className="hero-top">
-            <span className="pill">
-              <CalendarDays size={14} />
-              {s.active
-                ? "WORKOUT IN PROGRESS"
-                : today
-                  ? "TODAY’S SESSION"
-                  : "YOUR NEXT SESSION"}
-            </span>
-            <span className="muted">
-              {s.active
-                ? "Ready when you are"
-                : next
-                  ? formatDate(next.date.getTime())
-                  : "Make a plan"}
-            </span>
-          </div>
-          <div className="hero-content">
-            <div>
-              <h2>
-                {s.active?.name ?? next?.program.name ?? "Your next chapter"}
-              </h2>
-              <p>
-                {s.profile.intro
-                  ? "Build your foundation."
-                  : "Show up. Find your rhythm."}
-                <br />A little stronger than before.
-              </p>
-              <div className="hero-meta">
-                <span>
-                  {s.active?.entries.length ?? next?.program.items.length ?? 0}{" "}
-                  exercises
-                </span>
-                <span>{s.profile.minutes} min target</span>
-                <span>
-                  {s.profile.intro ? "Foundation phase" : "Hypertrophy"}
-                </span>
-              </div>
-            </div>
-            <div className="strength-art" aria-hidden="true">
-              <div className="orbit one" />
-              <div className="orbit two" />
-              <div className="orbit three" />
-              <Dumbbell />
-            </div>
-          </div>
+      <section className="today-start card">
+        <div className="today-start-copy">
+          <span className="pill">
+            <CalendarDays size={14} />
+            {s.active
+              ? "CONTINUE YOUR SESSION"
+              : today
+                ? "TODAY’S WORKOUT"
+                : "NEXT WORKOUT"}
+          </span>
+          <h2>
+            {s.active?.name ?? next?.program.name ?? "Make your first plan"}
+          </h2>
+          <p>
+            {plan.length} exercises · {s.profile.minutes} min target
+            {!today && !s.active && next
+              ? " · " + formatDate(next.date.getTime())
+              : ""}
+          </p>
+          <p className="today-coach-copy">
+            We’ll walk through each machine, set, and rest together.
+          </p>
           <Button
-            variant="primary large"
+            variant="primary large full"
             onClick={() =>
               s.active
                 ? navigate("Workout")
@@ -168,7 +114,7 @@ export function Today({
                   : navigate("Programs")
             }
           >
-            <Play size={19} fill="currentColor" />
+            <Play size={18} fill="currentColor" />
             {s.active
               ? "Resume workout"
               : next
@@ -176,238 +122,167 @@ export function Today({
                 : "Create a program"}
             <ArrowRight size={18} />
           </Button>
-          <small className="hero-foot">
+          <small>
             {s.active
-              ? "Your session is saved on this device."
-              : "Your plan is ready. Make this time yours."}
+              ? "Saved on this device. Pick up where you left off."
+              : "Start light. Get comfortable. Build from there."}
           </small>
         </div>
-        <Card className="week-card">
-          <SectionTitle
-            title="This week"
-            extra={<Flame size={19} className="accent" />}
-          />
-          <div className="week-count">
-            {matched}
-            <span> / {planned || s.profile.days.length}</span>
-          </div>
-          <p>
-            planned sessions completed{extra > 0 ? ` · ${extra} extra` : ""}
-          </p>
-          <div className="week-days">
-            {[1, 2, 3, 4, 5, 6, 0].map((d) => {
-              const date = new Date();
-              date.setDate(
-                date.getDate() - ((date.getDay() + 6) % 7) + ((d + 6) % 7),
-              );
-              const done = weekly.some(
-                (w) => localDay(new Date(w.finished!)) === localDay(date),
-              );
-              return (
-                <div key={d}>
-                  <span>{days[d][0]}</span>
-                  <div
-                    className={
-                      done
-                        ? "done"
-                        : s.profile.days.includes(d)
-                          ? "planned"
-                          : ""
-                    }
-                  >
-                    {done ? (
-                      <Check size={15} />
-                    ) : d === new Date().getDay() ? (
-                      <span className="today-dot" />
-                    ) : (
-                      ""
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <div className="divider" />
-          <p className="small">
-            {matched >= planned && planned > 0
-              ? "You completed every planned session this week. Keep recovery part of the plan."
-              : weekly.length
-                ? "Every session is a step forward. Keep your next one simple."
-                : "Your week starts with one good session."}
-          </p>
-        </Card>
-      </div>
-      <div className="stats-grid">
-        <Card>
-          <Stat
-            label="BODYWEIGHT"
-            value={
-              weight ? (
-                <>
-                  {fromKg(weight.kg, s.profile.units)}{" "}
-                  <em>{s.profile.units}</em>
-                </>
-              ) : (
-                "—"
-              )
-            }
-            detail={
-              trend.delta !== null
-                ? `${trend.delta > 0 ? "+" : ""}${fromKg(trend.delta, s.profile.units)} ${s.profile.units} · weekly average change`
-                : "Log across two weeks to see your trend"
-            }
-          />
-          <ArrowLink onClick={() => navigate("Nutrition")}>
-            Log weight
-          </ArrowLink>
-        </Card>
-        <Card>
-          <Stat
-            label="WORKING SETS THIS WEEK"
-            value={weekly.reduce((n, w) => n + setCount(w), 0)}
-            detail="Good reps add up."
-          />
-          <ArrowLink onClick={() => navigate("Progress")}>
-            Explore progress
-          </ArrowLink>
-        </Card>
-        <Card>
-          <Stat
-            label="YOUR TRAINING RHYTHM"
-            value={s.history.length}
-            detail="Total completed sessions"
-          />
-          <ArrowLink onClick={() => navigate("Progress")}>
-            Weekly review
-          </ArrowLink>
-        </Card>
-      </div>
-      <div className="split-grid">
-        <Card>
-          <SectionTitle
-            title="Your machine plan"
-            extra={
-              <ArrowLink onClick={() => navigate("Machines")}>
-                All machines
-              </ArrowLink>
-            }
-          />
-          {plan.length ? (
-            plan.map((item, i) => {
-              return (
-                <button
-                  className="exercise-preview plan-link"
-                  key={item.id}
-                  onClick={() =>
-                    item.machineId
-                      ? openMachine(item.machineId)
-                      : navigate(s.active ? "Workout" : "Programs")
-                  }
-                >
-                  <span className="number">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <div>
-                    <strong>{item.name}</strong>
-                    <small>
-                      {item.machineName} · {item.sets} × {item.min}–{item.max}
-                    </small>
-                  </div>
-                  <span className="muscle-tag">{item.muscles[0]}</span>
-                </button>
-              );
-            })
-          ) : (
-            <Empty
-              title="A plan makes it easier"
-              description="Create your first program to organize exercises and machines."
-              action={
-                <Button onClick={() => navigate("Programs")}>
-                  Build a program
-                </Button>
-              }
+        {first && (
+          <div className="today-first-machine">
+            <MachineVisual
+              machine={s.machines.find((m) => m.id === first.machineId)}
             />
-          )}
-        </Card>
-        <div className="stack">
-          <Card>
-            <SectionTitle title="Last time you showed up" />
-            {last ? (
-              <>
-                <button
-                  className="workout-link"
-                  onClick={() => showWorkout(last.id)}
-                >
-                  <span className="icon-box">
-                    <Dumbbell />
-                  </span>
-                  <span>
-                    <strong>{last.name}</strong>
-                    <small>
-                      {formatDate(last.finished!)} · {setCount(last)} working
-                      sets
-                    </small>
-                  </span>
-                  <ArrowUpRight />
-                </button>
-                <p className="small">
-                  {pb.length
-                    ? `${pb.length} machine-specific load ${pb.length === 1 ? "record" : "records"} logged.`
-                    : "A session in the bank. That is progress."}
-                </p>
-                <Button
-                  variant="secondary full"
-                  onClick={() =>
-                    start({
-                      id: last.programId,
-                      name: last.name,
-                      days: [],
-                      archived: false,
-                      items: last.entries.map((e) => ({
-                        id: e.id,
-                        exerciseId: e.exerciseId,
-                        machineId: e.machineId,
-                        sets: e.targetSets,
-                        min: e.min,
-                        max: e.max,
-                        rest: e.rest,
-                      })),
-                    })
-                  }
-                >
-                  Repeat last workout
-                </Button>
-              </>
-            ) : (
-              <p className="muted">
-                Your first finished workout will live here. Start small and make
-                it count.
-              </p>
+            <small>{s.active ? "YOUR NEXT MACHINE" : "START HERE"}</small>
+            <strong>{first.machineName}</strong>
+          </div>
+        )}
+      </section>
+      <div className="today-rhythm">
+        <div>
+          <span className="rhythm-checks" aria-hidden="true">
+            {Array.from(
+              { length: planned || s.profile.days.length },
+              (_, i) => (
+                <span key={i} className={i < matched ? "done" : ""}>
+                  {i < matched && <Check size={14} />}
+                </span>
+              ),
             )}
+          </span>
+          <strong>
+            {matched}/{planned || s.profile.days.length} this week
+          </strong>
+          {extra > 0 && <small>+{extra} extra</small>}
+        </div>
+        <button className="text-button" onClick={() => navigate("Progress")}>
+          See progress <ArrowRight size={16} />
+        </button>
+      </div>
+      <section className="today-plan">
+        <SectionTitle
+          title="Your machine plan"
+          extra={
+            <ArrowLink onClick={() => navigate("Machines")}>
+              All machines
+            </ArrowLink>
+          }
+        />
+        {plan.length ? (
+          <div className="visual-plan">
+            {plan.map((item, i) => (
+              <button
+                className="exercise-preview plan-link visual-plan-item"
+                key={item.id}
+                onClick={() =>
+                  item.machineId
+                    ? openMachine(item.machineId)
+                    : navigate(s.active ? "Workout" : "Programs")
+                }
+              >
+                <MachineVisual
+                  compact
+                  machine={s.machines.find((m) => m.id === item.machineId)}
+                />
+                <div>
+                  <small className="plan-step">
+                    {item.done ? "COMPLETE" : String(i + 1).padStart(2, "0")}
+                  </small>
+                  <strong>{item.name}</strong>
+                  <small>
+                    {item.machineName} · {item.sets} × {item.min}–{item.max}
+                  </small>
+                </div>
+                {item.done ? (
+                  <Check className="accent" size={18} />
+                ) : (
+                  <ArrowRight size={17} />
+                )}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <Empty
+            title="A plan makes it easier"
+            description="Pick your exercises and machines once. We’ll guide you from there."
+            action={
+              <Button onClick={() => navigate("Programs")}>
+                Build a program
+              </Button>
+            }
+          />
+        )}
+      </section>
+      {last && (
+        <Card className="today-last">
+          <div>
+            <small>LAST WORKOUT · {formatDate(last.finished!)}</small>
+            <button
+              className="text-button"
+              onClick={() => showWorkout(last.id)}
+            >
+              <strong>{last.name}</strong>
+              <ArrowRight size={16} />
+            </button>
+            <small>{setCount(last)} working sets completed</small>
+          </div>
+          <Button
+            variant="secondary"
+            onClick={() =>
+              start({
+                id: last.programId,
+                name: last.name,
+                days: [],
+                archived: false,
+                items: last.entries.map((e) => ({
+                  id: e.id,
+                  exerciseId: e.exerciseId,
+                  machineId: e.machineId,
+                  sets: e.targetSets,
+                  min: e.min,
+                  max: e.max,
+                  rest: e.rest,
+                })),
+              })
+            }
+          >
+            <RotateCcw size={16} />
+            Repeat last workout
+          </Button>
+        </Card>
+      )}
+      <details className="today-details">
+        <summary>Progress & recent machines</summary>
+        <div className="simple-insights">
+          <Card>
+            <SectionTitle title="Bodyweight" />
+            <strong className="insight-value">
+              {weight
+                ? fromKg(weight.kg, s.profile.units) + " " + s.profile.units
+                : "Add your first weigh-in"}
+            </strong>
+            <p className="muted">
+              {trend.delta !== null
+                ? (trend.delta > 0 ? "+" : "") +
+                  fromKg(trend.delta, s.profile.units) +
+                  " " +
+                  s.profile.units +
+                  " · weekly average change"
+                : "Log across two weeks to see your trend."}
+            </p>
+            <ArrowLink onClick={() => navigate("Nutrition")}>
+              Log weight
+            </ArrowLink>
           </Card>
           <Card>
-            <SectionTitle title="Recently used" />
-            {used.length ? (
-              used.map(({ m, stats }) => (
-                <button
-                  className="list-line plan-link"
-                  key={m.id}
-                  onClick={() => openMachine(m.id)}
-                >
-                  <div>
-                    <strong>{m.name}</strong>
-                    <small>
-                      {formatDate(stats.last!)} · {stats.sessions} sessions
-                    </small>
-                  </div>
-                  <Dumbbell size={16} />
-                </button>
-              ))
-            ) : (
-              <p className="muted">
-                Log a set to start building your equipment history.
-              </p>
-            )}
+            <SectionTitle title="This week" />
+            <p>
+              {weekly.reduce((n, w) => n + setCount(w), 0)} working sets ·{" "}
+              {s.history.length} total sessions
+            </p>
+            <ArrowLink onClick={() => navigate("Progress")}>
+              Weekly review
+            </ArrowLink>
           </Card>
           <Card>
             <SectionTitle title="Recent strength improvements" />
@@ -416,9 +291,7 @@ export function Today({
                 <div className="list-line" key={i}>
                   <div>
                     <strong>{r.name}</strong>
-                    <small>
-                      {r.machine} · {formatDate(r.date)}
-                    </small>
+                    <small>{r.machine}</small>
                   </div>
                   <strong>
                     +{fromKg(r.kg - r.previousKg!, s.profile.units)}{" "}
@@ -428,21 +301,42 @@ export function Today({
               ))
             ) : (
               <p className="muted">
-                Your first sessions establish a baseline. Improvements appear
-                when you exceed a previous load on the same exercise and
-                machine.
+                Your first workouts establish a baseline. Your improvements will
+                appear here.
               </p>
             )}
           </Card>
-          <div className="recovery-note">
-            <span className="accent">RECOVERY IS PART OF THE PLAN</span>
-            <p>
-              Leave roughly a day between full-body sessions when possible. If
-              you still feel fatigued, adjust the load or take another rest day.
-            </p>
-          </div>
+          <Card>
+            <SectionTitle title="Recently used" />
+            {used.length ? (
+              used.map(({ m, stats }) => (
+                <button
+                  key={m.id}
+                  className="list-line plan-link"
+                  onClick={() => openMachine(m.id)}
+                >
+                  <MachineVisual compact machine={m} />
+                  <span>
+                    <strong>{m.name}</strong>
+                    <small>
+                      {formatDate(stats.last!)} · {stats.sessions} sessions
+                    </small>
+                  </span>
+                </button>
+              ))
+            ) : (
+              <p className="muted">
+                Your recently used machines will appear after your first
+                workout.
+              </p>
+            )}
+          </Card>
         </div>
-      </div>
-    </>
+      </details>
+      <p className="today-recovery">
+        Leave roughly a day between full-body sessions. Still feeling fatigued?
+        Take more time to recover.
+      </p>
+    </div>
   );
 }

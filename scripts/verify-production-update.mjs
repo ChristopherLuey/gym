@@ -7,6 +7,14 @@ const base =
 const browser = await chromium.launch();
 const context = await browser.newContext({ ...devices["iPhone 13"] });
 const page = await context.newPage();
+async function openEditor() {
+  const button = page.getByRole("button", {
+    name: "Edit workout",
+    exact: true,
+  });
+  // Also works with the previous release, which opened the full editor directly.
+  if (await button.count()) await button.click();
+}
 const errors = [];
 page.on("pageerror", (error) => errors.push(error.message));
 page.on("console", (message) => {
@@ -26,6 +34,10 @@ try {
   await page
     .getByRole("button", { name: "Start workout", exact: true })
     .click();
+  await expect(
+    page.getByRole("heading", { name: "Full Body A", exact: true }),
+  ).toBeVisible();
+  await openEditor();
   let card = page.locator(".live-exercise").first();
   const exercise = await card.locator("h2").innerText();
   await card.getByLabel(`${exercise} set 1 weight`, { exact: true }).fill("50");
@@ -39,6 +51,10 @@ try {
     .click();
   await page.getByRole("button", { name: "Skip", exact: true }).click();
   await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Full Body A", exact: true }),
+  ).toBeVisible();
+  await openEditor();
   await expect(
     card.getByLabel(`${exercise} set 1 weight`, { exact: true }),
   ).toHaveValue("50");
@@ -99,12 +115,20 @@ try {
   await page
     .getByRole("button", { name: "Repeat last workout", exact: true })
     .click();
+  await expect(
+    page.getByRole("heading", { name: "Full Body A", exact: true }),
+  ).toBeVisible();
+  await openEditor();
   card = page.locator(".live-exercise").first();
   await expect(
     card.getByLabel(`${exercise} set 1 weight`, { exact: true }),
   ).toHaveValue("50");
   await context.setOffline(true);
   await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Full Body A", exact: true }),
+  ).toBeVisible();
+  await openEditor();
   await expect(
     card.getByLabel(`${exercise} set 1 weight`, { exact: true }),
   ).toHaveValue("50");
@@ -118,6 +142,10 @@ try {
     .click();
   await page.getByRole("button", { name: "Skip", exact: true }).click();
   await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Full Body A", exact: true }),
+  ).toBeVisible();
+  await openEditor();
   await expect(
     card.getByRole("button", {
       name: `Uncheck ${exercise} set 1`,

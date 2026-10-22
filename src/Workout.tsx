@@ -38,6 +38,7 @@ import {
 import { Button, Card, Field, Heading, Modal, Stat, Empty } from "./ui";
 import { SetupFields } from "./Machines";
 import { ExerciseDetail } from "./Programs";
+import { GuidedWorkout } from "./GuidedWorkout";
 const clock = (ms: number) => {
   const s = Math.max(0, Math.floor(ms / 1000));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -130,6 +131,7 @@ export function Workout({
 }) {
   const w = s.active;
   const [now, setNow] = useState(Date.now()),
+    [editing, setEditing] = useState(false),
     [setup, setSetup] = useState<string | null>(null),
     [replacement, setReplacement] = useState<string | null>(null),
     [replaceMachine, setReplaceMachine] = useState(""),
@@ -208,502 +210,543 @@ export function Workout({
         old.sets = old.sets.filter((s) => s.done);
         s.active.entries.splice(index + 1, 0, replacementEntry);
       } else s.active.entries.splice(index, 1, replacementEntry);
+      s.active.guide = { entryId: replacementEntry.id, stage: "setup" };
+      s.active.restUntil = null;
     });
     setReplacement(null);
   };
   return (
     <>
-      <Heading
-        eyebrow="THIS TIME IS YOURS"
-        title={w.name}
-        subtitle={`${clock(duration(w, now))} active · ${done} of ${total} sets complete`}
-        action={
-          <div className="row">
-            <Button
-              variant="secondary"
-              aria-label={w.pausedAt ? "Resume workout" : "Pause workout"}
-              onClick={() =>
-                mutate((w) => {
-                  if (w.pausedAt) {
-                    w.pausedMs += Date.now() - w.pausedAt;
-                    w.pausedAt = null;
-                  } else {
-                    w.pausedAt = Date.now();
-                    w.restUntil = null;
-                  }
-                })
-              }
-            >
-              {w.pausedAt ? <Play size={18} /> : <Pause size={18} />}
-              <span>{w.pausedAt ? "Resume" : "Pause"}</span>
-            </Button>
-            <Button variant="primary" onClick={() => setConfirm("finish")}>
-              <Flag size={18} />
-              Finish
-            </Button>
-          </div>
-        }
-      />
-      <div className="session-progress">
-        <span style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
-      </div>
-      {w.pausedAt && (
-        <div className="notice">
-          Workout paused. Resume when you’re ready to log your next set.
-        </div>
-      )}
-      {notice && (
-        <div role="status" className="notice">
-          {notice}
-          <Button variant="ghost" onClick={() => setNotice("")}>
-            Dismiss
+      {editing ? (
+        <>
+          <Button
+            variant="ghost guide-back"
+            onClick={() => {
+              setEditing(false);
+              window.scrollTo(0, 0);
+            }}
+          >
+            Back to guided workout
           </Button>
-        </div>
-      )}
-      <div className="workout-layout">
-        <div className="session-exercises">
-          {w.entries.map((e, index) => {
-            const prior = previous(s, e.exerciseId, e.machineId),
-              machine = s.machines.find((m) => m.id === e.machineId),
-              recommendation = progression(prior, machine?.incrementKg, {
-                fatigue: e.fatigue,
-                max: e.max,
-                targetSets: e.targetSets,
-              });
-            return (
-              <Card key={e.id} className="live-exercise">
-                <div className="exercise-top">
-                  <span className="number">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <div>
-                    <h2>{e.exerciseName}</h2>
-                    <button
-                      className="text-button machine-switch"
-                      onClick={() => {
-                        setReplacement(e.id);
-                        setReplaceMachine(e.machineId);
-                        setReplaceExercise(e.exerciseId);
-                      }}
-                    >
-                      {e.machineName}
-                      <RefreshCw size={14} />
-                    </button>
-                  </div>
-                  <Button
-                    variant="icon ghost"
-                    aria-label={`Technique for ${e.exerciseName}`}
-                    onClick={() => setExercise(e.exerciseId)}
-                  >
-                    <BookOpen size={18} />
-                  </Button>
-                </div>
-                <div className="exercise-tools">
-                  <span className="muscle-tag">
-                    {e.min}–{e.max} reps · {e.rest}s rest
-                  </span>
-                  <button
-                    className="text-button"
-                    onClick={() => setSetup(e.id)}
-                  >
-                    <Settings2 size={14} />
-                    Machine setup
-                  </button>
-                  <button
-                    className="text-button"
-                    onClick={() => {
-                      setReplacement(e.id);
-                      setReplaceMachine(e.machineId);
-                      setReplaceExercise(e.exerciseId);
-                    }}
-                  >
-                    Machine occupied?
-                  </button>
-                </div>
-                {prior && (
-                  <p className="previous">
-                    LAST TIME{" "}
-                    <span>
-                      {working(prior)
-                        .map(
-                          (set) =>
-                            `${fromKg(set.kg, s.profile.units)} × ${set.reps}`,
-                        )
-                        .join(" / ")}{" "}
-                      {s.profile.units}
-                    </span>
-                  </p>
-                )}
-                <div className="set-head">
-                  <span>SET</span>
-                  <span>{s.profile.units.toUpperCase()}</span>
-                  <span>REPS</span>
-                  <span>RIR</span>
-                  <span>DONE</span>
-                  <span />
-                </div>
-                {e.sets.map((set, i) => (
-                  <div
-                    key={set.id}
-                    className={`set-row ${set.done ? "completed" : ""}`}
-                  >
-                    <button
-                      className="set-kind"
-                      title="Switch warm-up / working set"
-                      aria-label={`Set ${i + 1} type: ${set.kind}`}
-                      onClick={() =>
-                        editSet(e.id, set.id, {
-                          kind: set.kind === "work" ? "warmup" : "work",
-                        })
+          <Heading
+            eyebrow="THIS TIME IS YOURS"
+            title={w.name}
+            subtitle={`${clock(duration(w, now))} active · ${done} of ${total} sets complete`}
+            action={
+              <div className="row">
+                <Button
+                  variant="secondary"
+                  aria-label={w.pausedAt ? "Resume workout" : "Pause workout"}
+                  onClick={() =>
+                    mutate((w) => {
+                      if (w.pausedAt) {
+                        w.pausedMs += Date.now() - w.pausedAt;
+                        w.pausedAt = null;
+                      } else {
+                        w.pausedAt = Date.now();
+                        w.restUntil = null;
                       }
-                    >
-                      {set.kind === "warmup" ? "W" : i + 1}
-                    </button>
-                    <input
-                      aria-label={`${e.exerciseName} set ${i + 1} weight`}
-                      inputMode="decimal"
-                      type="number"
-                      min="0"
-                      max="2000"
-                      step="0.1"
-                      value={fromKg(set.kg, s.profile.units)}
-                      onChange={(v) => {
-                        const n = Number(v.target.value);
-                        if (n >= 0 && n <= 2000)
-                          editSet(e.id, set.id, {
-                            kg: toKg(n, s.profile.units),
-                          });
-                      }}
-                    />
-                    <input
-                      aria-label={`${e.exerciseName} set ${i + 1} reps`}
-                      inputMode="numeric"
-                      type="number"
-                      min="0"
-                      max="200"
-                      value={set.reps}
-                      onChange={(v) => {
-                        const n = Number(v.target.value);
-                        if (Number.isInteger(n) && n >= 0 && n <= 200)
-                          editSet(e.id, set.id, { reps: n });
-                      }}
-                    />
-                    <input
-                      aria-label={`${e.exerciseName} set ${i + 1} RIR`}
-                      inputMode="numeric"
-                      type="number"
-                      min="0"
-                      max="10"
-                      placeholder="—"
-                      value={set.rir ?? ""}
-                      onChange={(v) => {
-                        const n =
-                          v.target.value === "" ? null : Number(v.target.value);
-                        if (n === null || (n >= 0 && n <= 10))
-                          editSet(e.id, set.id, { rir: n });
-                      }}
-                    />
-                    <button
-                      disabled={!!w.pausedAt}
-                      className={`complete-set ${set.done ? "checked" : ""}`}
-                      aria-label={`${set.done ? "Uncheck" : "Complete"} ${e.exerciseName} set ${i + 1}`}
-                      aria-pressed={set.done}
-                      onClick={() => {
-                        if (!set.done && !set.reps) {
-                          setNotice(
-                            "Enter at least one repetition before completing a set.",
-                          );
-                          return;
-                        }
-                        mutate((w) => {
-                          const current = w.entries
-                            .find((x) => x.id === e.id)!
-                            .sets.find((x) => x.id === set.id)!;
-                          current.done = !current.done;
-                          if (current.done)
-                            w.restUntil = Date.now() + e.rest * 1000;
-                        });
-                      }}
-                    >
-                      <Check size={20} />
-                    </button>
-                    <Button
-                      variant="icon ghost delete-set"
-                      aria-label={`Delete ${e.exerciseName} set ${i + 1}`}
-                      onClick={() =>
-                        edit(e.id, (e) => {
-                          e.sets = e.sets.filter((s) => s.id !== set.id);
-                        })
-                      }
-                    >
-                      <Trash2 size={14} />
-                    </Button>
-                  </div>
-                ))}
-                <div className="row space-top">
-                  <Button
-                    variant="ghost small-button"
-                    onClick={() =>
-                      edit(e.id, (e) => {
-                        const last = e.sets.at(-1);
-                        e.sets.push({
-                          id: uid(),
-                          kg: last?.kg ?? 0,
-                          reps: last?.reps ?? e.min,
-                          rir: null,
-                          kind: "work",
-                          done: false,
-                        });
-                        e.targetSets = e.sets.filter(
-                          (s) => s.kind === "work",
-                        ).length;
-                      })
-                    }
-                  >
-                    <Plus size={16} />
-                    Add set
-                  </Button>
-                  <Button
-                    variant="ghost small-button"
-                    onClick={() =>
-                      edit(e.id, (e) => {
-                        e.sets.unshift({
-                          id: uid(),
-                          kg: 0,
-                          reps: 10,
-                          rir: null,
-                          kind: "warmup",
-                          done: false,
-                        });
-                      })
-                    }
-                  >
-                    + Warm-up
-                  </Button>
-                  <div className="row move-controls">
-                    <Button
-                      variant="icon ghost"
-                      aria-label={`Move ${e.exerciseName} up`}
-                      disabled={!index}
-                      onClick={() =>
-                        mutate((w) => {
-                          [w.entries[index], w.entries[index - 1]] = [
-                            w.entries[index - 1],
-                            w.entries[index],
-                          ];
-                        })
-                      }
-                    >
-                      <ArrowUp size={14} />
-                    </Button>
-                    <Button
-                      variant="icon ghost"
-                      aria-label={`Move ${e.exerciseName} down`}
-                      disabled={index === w.entries.length - 1}
-                      onClick={() =>
-                        mutate((w) => {
-                          [w.entries[index], w.entries[index + 1]] = [
-                            w.entries[index + 1],
-                            w.entries[index],
-                          ];
-                        })
-                      }
-                    >
-                      <ArrowDown size={14} />
-                    </Button>
-                  </div>
-                </div>
-                <details>
-                  <summary>Progression & session details</summary>
-                  <p className="small">{recommendation.reason}</p>
-                  {recommendation.kg !== null && e.decision === "pending" && (
-                    <div className="row">
+                    })
+                  }
+                >
+                  {w.pausedAt ? <Play size={18} /> : <Pause size={18} />}
+                  <span>{w.pausedAt ? "Resume" : "Pause"}</span>
+                </Button>
+                <Button variant="primary" onClick={() => setConfirm("finish")}>
+                  <Flag size={18} />
+                  Finish
+                </Button>
+              </div>
+            }
+          />
+          <div className="session-progress">
+            <span style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
+          </div>
+          {w.pausedAt && (
+            <div className="notice">
+              Workout paused. Resume when you’re ready to log your next set.
+            </div>
+          )}
+          {notice && (
+            <div role="status" className="notice">
+              {notice}
+              <Button variant="ghost" onClick={() => setNotice("")}>
+                Dismiss
+              </Button>
+            </div>
+          )}
+          <div className="workout-layout">
+            <div className="session-exercises">
+              {w.entries.map((e, index) => {
+                const prior = previous(s, e.exerciseId, e.machineId),
+                  machine = s.machines.find((m) => m.id === e.machineId),
+                  recommendation = progression(prior, machine?.incrementKg, {
+                    fatigue: e.fatigue,
+                    max: e.max,
+                    targetSets: e.targetSets,
+                  });
+                return (
+                  <Card key={e.id} className="live-exercise">
+                    <div className="exercise-top">
+                      <span className="number">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <div>
+                        <h2>{e.exerciseName}</h2>
+                        <button
+                          className="text-button machine-switch"
+                          onClick={() => {
+                            setReplacement(e.id);
+                            setReplaceMachine(e.machineId);
+                            setReplaceExercise(e.exerciseId);
+                          }}
+                        >
+                          {e.machineName}
+                          <RefreshCw size={14} />
+                        </button>
+                      </div>
                       <Button
-                        variant="secondary"
+                        variant="icon ghost"
+                        aria-label={`Technique for ${e.exerciseName}`}
+                        onClick={() => setExercise(e.exerciseId)}
+                      >
+                        <BookOpen size={18} />
+                      </Button>
+                    </div>
+                    <div className="exercise-tools">
+                      <span className="muscle-tag">
+                        {e.min}–{e.max} reps · {e.rest}s rest
+                      </span>
+                      <button
+                        className="text-button"
+                        onClick={() => setSetup(e.id)}
+                      >
+                        <Settings2 size={14} />
+                        Machine setup
+                      </button>
+                      <button
+                        className="text-button"
+                        onClick={() => {
+                          setReplacement(e.id);
+                          setReplaceMachine(e.machineId);
+                          setReplaceExercise(e.exerciseId);
+                        }}
+                      >
+                        Machine occupied?
+                      </button>
+                    </div>
+                    {prior && (
+                      <p className="previous">
+                        LAST TIME{" "}
+                        <span>
+                          {working(prior)
+                            .map(
+                              (set) =>
+                                `${fromKg(set.kg, s.profile.units)} × ${set.reps}`,
+                            )
+                            .join(" / ")}{" "}
+                          {s.profile.units}
+                        </span>
+                      </p>
+                    )}
+                    <div className="set-head">
+                      <span>SET</span>
+                      <span>{s.profile.units.toUpperCase()}</span>
+                      <span>REPS</span>
+                      <span>RIR</span>
+                      <span>DONE</span>
+                      <span />
+                    </div>
+                    {e.sets.map((set, i) => (
+                      <div
+                        key={set.id}
+                        className={`set-row ${set.done ? "completed" : ""}`}
+                      >
+                        <button
+                          className="set-kind"
+                          title="Switch warm-up / working set"
+                          aria-label={`Set ${i + 1} type: ${set.kind}`}
+                          onClick={() =>
+                            editSet(e.id, set.id, {
+                              kind: set.kind === "work" ? "warmup" : "work",
+                            })
+                          }
+                        >
+                          {set.kind === "warmup" ? "W" : i + 1}
+                        </button>
+                        <input
+                          aria-label={`${e.exerciseName} set ${i + 1} weight`}
+                          inputMode="decimal"
+                          type="number"
+                          min="0"
+                          max="2000"
+                          step="0.1"
+                          value={fromKg(set.kg, s.profile.units)}
+                          onChange={(v) => {
+                            const n = Number(v.target.value);
+                            if (n >= 0 && n <= 2000)
+                              editSet(e.id, set.id, {
+                                kg: toKg(n, s.profile.units),
+                              });
+                          }}
+                        />
+                        <input
+                          aria-label={`${e.exerciseName} set ${i + 1} reps`}
+                          inputMode="numeric"
+                          type="number"
+                          min="0"
+                          max="200"
+                          value={set.reps}
+                          onChange={(v) => {
+                            const n = Number(v.target.value);
+                            if (Number.isInteger(n) && n >= 0 && n <= 200)
+                              editSet(e.id, set.id, { reps: n });
+                          }}
+                        />
+                        <input
+                          aria-label={`${e.exerciseName} set ${i + 1} RIR`}
+                          inputMode="numeric"
+                          type="number"
+                          min="0"
+                          max="10"
+                          placeholder="—"
+                          value={set.rir ?? ""}
+                          onChange={(v) => {
+                            const n =
+                              v.target.value === ""
+                                ? null
+                                : Number(v.target.value);
+                            if (n === null || (n >= 0 && n <= 10))
+                              editSet(e.id, set.id, { rir: n });
+                          }}
+                        />
+                        <button
+                          disabled={!!w.pausedAt}
+                          className={`complete-set ${set.done ? "checked" : ""}`}
+                          aria-label={`${set.done ? "Uncheck" : "Complete"} ${e.exerciseName} set ${i + 1}`}
+                          aria-pressed={set.done}
+                          onClick={() => {
+                            if (!set.done && !set.reps) {
+                              setNotice(
+                                "Enter at least one repetition before completing a set.",
+                              );
+                              return;
+                            }
+                            mutate((w) => {
+                              const current = w.entries
+                                .find((x) => x.id === e.id)!
+                                .sets.find((x) => x.id === set.id)!;
+                              current.done = !current.done;
+                              if (current.done)
+                                w.restUntil = Date.now() + e.rest * 1000;
+                            });
+                          }}
+                        >
+                          <Check size={20} />
+                        </button>
+                        <Button
+                          variant="icon ghost delete-set"
+                          aria-label={`Delete ${e.exerciseName} set ${i + 1}`}
+                          onClick={() =>
+                            edit(e.id, (e) => {
+                              e.sets = e.sets.filter((s) => s.id !== set.id);
+                            })
+                          }
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                    ))}
+                    <div className="row space-top">
+                      <Button
+                        variant="ghost small-button"
                         onClick={() =>
                           edit(e.id, (e) => {
-                            e.decision = "accepted";
-                            e.suggestionKg = recommendation.kg;
-                            e.sets.forEach((set) => {
-                              if (!set.done && set.kind === "work")
-                                set.kg = recommendation.kg ?? set.kg;
+                            const last = e.sets.at(-1);
+                            e.sets.push({
+                              id: uid(),
+                              kg: last?.kg ?? 0,
+                              reps: last?.reps ?? e.min,
+                              rir: null,
+                              kind: "work",
+                              done: false,
+                            });
+                            e.targetSets = e.sets.filter(
+                              (s) => s.kind === "work",
+                            ).length;
+                          })
+                        }
+                      >
+                        <Plus size={16} />
+                        Add set
+                      </Button>
+                      <Button
+                        variant="ghost small-button"
+                        onClick={() =>
+                          edit(e.id, (e) => {
+                            e.sets.unshift({
+                              id: uid(),
+                              kg: 0,
+                              reps: 10,
+                              rir: null,
+                              kind: "warmup",
+                              done: false,
                             });
                           })
                         }
                       >
-                        {recommendation.increase ? "Try" : "Keep"}{" "}
-                        {fromKg(recommendation.kg!, s.profile.units)}{" "}
-                        {s.profile.units}
+                        + Warm-up
                       </Button>
-                      <Button
-                        variant="ghost"
-                        onClick={() =>
-                          edit(e.id, (e) => {
-                            e.decision = "rejected";
-                          })
-                        }
-                      >
-                        Choose my own load
-                      </Button>
+                      <div className="row move-controls">
+                        <Button
+                          variant="icon ghost"
+                          aria-label={`Move ${e.exerciseName} up`}
+                          disabled={!index}
+                          onClick={() =>
+                            mutate((w) => {
+                              [w.entries[index], w.entries[index - 1]] = [
+                                w.entries[index - 1],
+                                w.entries[index],
+                              ];
+                            })
+                          }
+                        >
+                          <ArrowUp size={14} />
+                        </Button>
+                        <Button
+                          variant="icon ghost"
+                          aria-label={`Move ${e.exerciseName} down`}
+                          disabled={index === w.entries.length - 1}
+                          onClick={() =>
+                            mutate((w) => {
+                              [w.entries[index], w.entries[index + 1]] = [
+                                w.entries[index + 1],
+                                w.entries[index],
+                              ];
+                            })
+                          }
+                        >
+                          <ArrowDown size={14} />
+                        </Button>
+                      </div>
                     </div>
-                  )}
-                  {e.decision !== "pending" && (
-                    <p className="accent small">
-                      Suggestion {e.decision}. You can still change any load.
-                    </p>
-                  )}
-                  <Field label="Fatigue today">
-                    <select
-                      value={e.fatigue}
-                      onChange={(v) => {
-                        const value = v.target.value as Entry["fatigue"];
-                        edit(e.id, (e) => {
-                          e.fatigue = value;
-                        });
-                      }}
-                    >
-                      <option value="normal">Manageable</option>
-                      <option value="high">Higher than usual</option>
-                    </select>
-                  </Field>
-                  <Field label="Exercise notes">
-                    <textarea
-                      value={e.notes}
-                      onChange={(v) => {
-                        const value = v.target.value;
-                        edit(e.id, (e) => {
-                          e.notes = value;
-                        });
-                      }}
-                    />
-                  </Field>
-                  <Field label="Rest between sets (seconds)">
-                    <input
-                      type="number"
-                      min="0"
-                      max="900"
-                      value={e.rest}
-                      onChange={(v) => {
-                        const n = Number(v.target.value);
-                        if (n >= 0 && n <= 900)
-                          edit(e.id, (e) => {
-                            e.rest = n;
+                    <details>
+                      <summary>Progression & session details</summary>
+                      <p className="small">{recommendation.reason}</p>
+                      {recommendation.kg !== null &&
+                        e.decision === "pending" && (
+                          <div className="row">
+                            <Button
+                              variant="secondary"
+                              onClick={() =>
+                                edit(e.id, (e) => {
+                                  e.decision = "accepted";
+                                  e.suggestionKg = recommendation.kg;
+                                  e.sets.forEach((set) => {
+                                    if (!set.done && set.kind === "work")
+                                      set.kg = recommendation.kg ?? set.kg;
+                                  });
+                                })
+                              }
+                            >
+                              {recommendation.increase ? "Try" : "Keep"}{" "}
+                              {fromKg(recommendation.kg!, s.profile.units)}{" "}
+                              {s.profile.units}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              onClick={() =>
+                                edit(e.id, (e) => {
+                                  e.decision = "rejected";
+                                })
+                              }
+                            >
+                              Choose my own load
+                            </Button>
+                          </div>
+                        )}
+                      {e.decision !== "pending" && (
+                        <p className="accent small">
+                          Suggestion {e.decision}. You can still change any
+                          load.
+                        </p>
+                      )}
+                      <Field label="Fatigue today">
+                        <select
+                          value={e.fatigue}
+                          onChange={(v) => {
+                            const value = v.target.value as Entry["fatigue"];
+                            edit(e.id, (e) => {
+                              e.fatigue = value;
+                            });
+                          }}
+                        >
+                          <option value="normal">Manageable</option>
+                          <option value="high">Higher than usual</option>
+                        </select>
+                      </Field>
+                      <Field label="Exercise notes">
+                        <textarea
+                          value={e.notes}
+                          onChange={(v) => {
+                            const value = v.target.value;
+                            edit(e.id, (e) => {
+                              e.notes = value;
+                            });
+                          }}
+                        />
+                      </Field>
+                      <Field label="Rest between sets (seconds)">
+                        <input
+                          type="number"
+                          min="0"
+                          max="900"
+                          value={e.rest}
+                          onChange={(v) => {
+                            const n = Number(v.target.value);
+                            if (n >= 0 && n <= 900)
+                              edit(e.id, (e) => {
+                                e.rest = n;
+                              });
+                          }}
+                        />
+                      </Field>
+                      <Button
+                        variant="ghost danger"
+                        onClick={() => {
+                          if (e.sets.some((s) => s.done)) {
+                            setNotice(
+                              "Completed sets are preserved. Delete those sets first if you want to remove this exercise.",
+                            );
+                            return;
+                          }
+                          mutate((w) => {
+                            w.entries = w.entries.filter((x) => x.id !== e.id);
                           });
-                      }}
-                    />
-                  </Field>
-                  <Button
-                    variant="ghost danger"
-                    onClick={() => {
-                      if (e.sets.some((s) => s.done)) {
-                        setNotice(
-                          "Completed sets are preserved. Delete those sets first if you want to remove this exercise.",
-                        );
-                        return;
-                      }
+                        }}
+                      >
+                        Remove exercise
+                      </Button>
+                    </details>
+                  </Card>
+                );
+              })}
+              <Button variant="secondary full" onClick={() => setAdd(true)}>
+                <Plus size={18} />
+                Add exercise
+              </Button>
+              <Card>
+                <Field label="Workout notes">
+                  <textarea
+                    value={w.notes}
+                    placeholder="How did the session feel?"
+                    onChange={(e) => {
+                      const value = e.target.value;
                       mutate((w) => {
-                        w.entries = w.entries.filter((x) => x.id !== e.id);
+                        w.notes = value;
                       });
                     }}
-                  >
-                    Remove exercise
-                  </Button>
-                </details>
+                  />
+                </Field>
+                <Button
+                  variant="ghost danger"
+                  onClick={() => setConfirm("discard")}
+                >
+                  Discard workout
+                </Button>
               </Card>
-            );
-          })}
-          <Button variant="secondary full" onClick={() => setAdd(true)}>
-            <Plus size={18} />
-            Add exercise
-          </Button>
-          <Card>
-            <Field label="Workout notes">
-              <textarea
-                value={w.notes}
-                placeholder="How did the session feel?"
-                onChange={(e) => {
-                  const value = e.target.value;
-                  mutate((w) => {
-                    w.notes = value;
-                  });
-                }}
-              />
-            </Field>
-            <Button
-              variant="ghost danger"
-              onClick={() => setConfirm("discard")}
-            >
-              Discard workout
-            </Button>
-          </Card>
-        </div>
-        <aside className="session-aside">
-          <Card>
-            <span className="eyebrow">YOUR SESSION</span>
-            <h3>{done} sets in the bank.</h3>
-            <p className="small muted">
-              Quality repetitions, comfortable ranges, and a little patience.
-            </p>
-            {w.entries.map((e) => (
-              <div className="checklist-line" key={e.id}>
-                <Check
-                  size={15}
-                  className={
-                    e.sets.length && e.sets.every((s) => s.done)
-                      ? "accent"
-                      : "muted"
-                  }
-                />
-                <span>{e.machineName}</span>
-              </div>
-            ))}
-            <div className="divider" />
-            <small>
-              Every change saves to this device. RIR means repetitions in
-              reserve. Tap a set number to switch between working and warm-up.
-            </small>
-          </Card>
-        </aside>
-      </div>
-      {w.restUntil !== null && (
-        <div
-          className={`rest-timer ${restRemaining <= 0 ? "ready" : ""}`}
-          role="status"
-        >
-          <Timer size={20} />
-          <div>
-            <strong>
-              {restRemaining > 0
-                ? clock(restRemaining)
-                : "Ready for your next set"}
-            </strong>
-            <small>
-              {restRemaining > 0
-                ? "Breathe. Reset. Go again."
-                : "Take more time if you need it."}
-            </small>
+            </div>
+            <aside className="session-aside">
+              <Card>
+                <span className="eyebrow">YOUR SESSION</span>
+                <h3>{done} sets in the bank.</h3>
+                <p className="small muted">
+                  Quality repetitions, comfortable ranges, and a little
+                  patience.
+                </p>
+                {w.entries.map((e) => (
+                  <div className="checklist-line" key={e.id}>
+                    <Check
+                      size={15}
+                      className={
+                        e.sets.length && e.sets.every((s) => s.done)
+                          ? "accent"
+                          : "muted"
+                      }
+                    />
+                    <span>{e.machineName}</span>
+                  </div>
+                ))}
+                <div className="divider" />
+                <small>
+                  Every change saves to this device. RIR means repetitions in
+                  reserve. Tap a set number to switch between working and
+                  warm-up.
+                </small>
+              </Card>
+            </aside>
           </div>
-          <Button
-            variant="ghost"
-            onClick={() =>
-              mutate((w) => {
-                w.restUntil = Math.max(Date.now(), w.restUntil ?? 0) + 30000;
-              })
-            }
-          >
-            +30s
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() =>
-              mutate((w) => {
-                w.restUntil = null;
-              })
-            }
-          >
-            {restRemaining > 0 ? "Skip" : "Done"}
-          </Button>
-        </div>
+          {w.restUntil !== null && (
+            <div
+              className={`rest-timer ${restRemaining <= 0 ? "ready" : ""}`}
+              role="status"
+            >
+              <Timer size={20} />
+              <div>
+                <strong>
+                  {restRemaining > 0
+                    ? clock(restRemaining)
+                    : "Ready for your next set"}
+                </strong>
+                <small>
+                  {restRemaining > 0
+                    ? "Breathe. Reset. Go again."
+                    : "Take more time if you need it."}
+                </small>
+              </div>
+              <Button
+                variant="ghost"
+                onClick={() =>
+                  mutate((w) => {
+                    w.restUntil =
+                      Math.max(Date.now(), w.restUntil ?? 0) + 30000;
+                  })
+                }
+              >
+                +30s
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  mutate((w) => {
+                    w.restUntil = null;
+                  })
+                }
+              >
+                {restRemaining > 0 ? "Skip" : "Done"}
+              </Button>
+            </div>
+          )}
+        </>
+      ) : (
+        <GuidedWorkout
+          state={s}
+          now={now}
+          onEdit={() => {
+            setEditing(true);
+            window.scrollTo(0, 0);
+          }}
+          onSetup={setSetup}
+          onReplace={(id) => {
+            const e = w.entries.find((e) => e.id === id)!;
+            setReplacement(id);
+            setReplaceMachine(e.machineId);
+            setReplaceExercise(e.exerciseId);
+          }}
+          onTechnique={setExercise}
+          onFinish={() => setConfirm("finish")}
+          onDiscard={() => setConfirm("discard")}
+        />
       )}
       {setupEntry && (
         <SetupModal

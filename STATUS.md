@@ -2,6 +2,16 @@
 
 This file records evidence, not assumed completion. The full acceptance contract remains in GOAL.md.
 
+## Simplicity revision — October 22, 2026
+
+- Added a default guided workout with machine/setup cues, one-set logging, a dedicated rest screen, explicit continuation, undo, and a final review. Existing full editing remains accessible through Edit workout.
+- Added original offline illustrations for incline press, pulldown, supported row, leg press, seated leg curl, cables, and dumbbells. Personal photos override diagrams, and custom machines can select a matching illustration.
+- Simplified Today into a workout start/resume card, weekly consistency, and a visual machine plan. Secondary insights and machine filters expand when needed. More contains Programs, Nutrition, and Settings.
+- Kept backward-compatible optional data fields. Older workouts and backups do not require a guide position or illustration selection; new exports retain both.
+- 32 unit tests passed, including guided advancement, paused/rest guards, undo, completed-history preservation, and backup round trips.
+- 27 browser tests passed locally across desktop Chromium, iPhone-sized Chromium, and iPhone-sized WebKit. New scenarios complete all 12 sets in a guided session, reload and continue offline, preserve machine setup, pause/resume, undo, switch occupied equipment, navigate the plan, and scan guided setup/set/rest screens for accessibility issues in both themes. Existing full-editor, backup, nutrition, and analytics checks continue to pass.
+- Physical iPhone testing remains unavailable. The release workflow gates deployment on the full test suite; current run status is available in [GitHub Actions](https://github.com/ChristopherLuey/gym/actions).
+
 ## Delivered and verified
 
 **Live application:** https://christopherluey.github.io/gym/

@@ -27,6 +27,14 @@ async function onboard(page: Page) {
   ).toBeVisible();
 }
 async function nav(page: Page, name: string) {
+  if (name === "Programs" || name === "Nutrition") {
+    await page.getByRole("button", { name: "More", exact: true }).click();
+    await page
+      .getByRole("dialog")
+      .getByRole("link", { name: new RegExp(name) })
+      .click();
+    return;
+  }
   await page
     .getByRole("navigation", { name: "Main navigation" })
     .getByRole("link", { name, exact: true })
@@ -57,10 +65,12 @@ test("onboarding units, equipment grouping, direct machine access and exercise n
   ).toBeVisible();
   await expect(page).toHaveURL(/#Machines\?machine=m-press$/);
   await page.getByRole("button", { name: "Close dialog", exact: true }).click();
+  await page.getByRole("button", { name: "Filters & groups" }).click();
   await expect(page.getByLabel("Group machines by")).toHaveValue("area");
   await page.getByLabel("Group machines by").selectOption("type");
   await nav(page, "Today");
   await nav(page, "Machines");
+  await page.getByRole("button", { name: "Filters & groups" }).click();
   await expect(page.getByLabel("Group machines by")).toHaveValue("type");
   await page.getByLabel("Group machines by").selectOption("muscle");
   await expect(page.locator(".machine-group").first()).toBeVisible();
@@ -113,6 +123,7 @@ test("onboarding, full workout lifecycle, setup, replacement, history and offlin
     .getByRole("button", { name: "Start workout", exact: true })
     .click();
   const card = page.locator(".live-exercise").first();
+  await page.getByRole("button", { name: "Edit workout", exact: true }).click();
   const ex = await card.locator("h2").innerText();
   await card.locator("summary").click();
   await card
@@ -147,6 +158,7 @@ test("onboarding, full workout lifecycle, setup, replacement, history and offlin
   await expect(page.getByText("Breathe. Reset. Go again.")).toBeVisible();
   await page.getByRole("button", { name: "Skip", exact: true }).click();
   await page.reload();
+  await page.getByRole("button", { name: "Edit workout", exact: true }).click();
   await expect(
     page.getByLabel(`${ex} set 1 weight`, { exact: true }),
   ).toHaveValue("50");
@@ -278,6 +290,7 @@ test("onboarding, full workout lifecycle, setup, replacement, history and offlin
   ).toBeVisible();
   await nav(page, "Today");
   await page.getByRole("button", { name: "Repeat last workout" }).click();
+  await page.getByRole("button", { name: "Edit workout", exact: true }).click();
   await expect(
     page
       .locator(".live-exercise")
@@ -309,6 +322,7 @@ test("skipping weight and equipment keeps onboarding usable and assignments hone
   await page
     .getByRole("button", { name: "Start workout", exact: true })
     .click();
+  await page.getByRole("button", { name: "Edit workout", exact: true }).click();
   await expect(
     page
       .locator(".live-exercise")
@@ -316,6 +330,7 @@ test("skipping weight and equipment keeps onboarding usable and assignments hone
       .getByRole("button", { name: "Choose equipment", exact: true }),
   ).toBeVisible();
   await page.reload();
+  await page.getByRole("button", { name: "Edit workout", exact: true }).click();
   await expect(page.locator(".live-exercise")).toHaveCount(6);
 });
 test("machine creation/edit, program assignment, nutrition, theme and backups", async ({
@@ -365,6 +380,7 @@ test("machine creation/edit, program assignment, nutrition, theme and backups", 
     .getByRole("button", { name: "Start workout", exact: true })
     .click();
   const first = page.locator(".live-exercise").first();
+  await page.getByRole("button", { name: "Edit workout", exact: true }).click();
   await first
     .getByLabel("Incline machine chest press set 1 weight", { exact: true })
     .fill("40");
@@ -548,6 +564,7 @@ test("accessible navigation and forms, cross-tab saves, custom program, archive 
     has: page.getByRole("heading", { name: "Quick session", exact: true }),
   });
   await program.getByRole("button", { name: "Start this session" }).click();
+  await page.getByRole("button", { name: "Edit workout", exact: true }).click();
   const workoutAccess = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
     .analyze();
@@ -574,6 +591,7 @@ test("accessible navigation and forms, cross-tab saves, custom program, archive 
   await page
     .getByRole("button", { name: "Archive machine", exact: true })
     .click();
+  await page.getByRole("button", { name: "Filters & groups" }).click();
   await page.getByRole("button", { name: "Archived", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Incline chest press", exact: true }),

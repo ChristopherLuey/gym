@@ -16,6 +16,7 @@ import {
   WifiOff,
   CheckCircle2,
   ArrowUpRight,
+  Ellipsis,
 } from "lucide-react";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import { load, subscribe, getSnapshot, change } from "./db";
@@ -28,7 +29,7 @@ import { Machines } from "./Machines";
 import { Workout, WorkoutSummary } from "./Workout";
 import { Nutrition } from "./Nutrition";
 import { Settings, downloadBackup } from "./Settings";
-import { Button } from "./ui";
+import { Button, Modal } from "./ui";
 const Progress = lazy(() => import("./Progress"));
 const nav = [
   ["Today", House],
@@ -57,6 +58,7 @@ export default function App() {
   const [page, setPage] = useState(() => route().page),
     [machine, setMachine] = useState(() => route().machine),
     [summary, setSummary] = useState<string | null>(null),
+    [more, setMore] = useState(false),
     [online, setOnline] = useState(navigator.onLine);
   const {
     offlineReady: [offlineReady],
@@ -136,24 +138,39 @@ export default function App() {
         </a>
         <span className="sidebar-label">YOUR TRAINING SPACE</span>
         <nav aria-label="Main navigation">
-          {nav.map(([name, Icon]) => (
-            <a
-              href={`#${name}`}
-              key={name}
-              onClick={(e) => {
-                e.preventDefault();
-                navigate(name);
-              }}
-              aria-current={page === name ? "page" : undefined}
-              className={page === name ? "active" : ""}
-            >
-              <Icon size={20} />
-              <span>{name}</span>
-              {name === "Workout" && s.active && (
-                <span className="active-dot" />
-              )}
-            </a>
-          ))}
+          {nav
+            .filter(([name]) => name !== "Programs" && name !== "Nutrition")
+            .map(([name, Icon]) => (
+              <a
+                href={`#${name}`}
+                key={name}
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate(name);
+                }}
+                aria-current={page === name ? "page" : undefined}
+                className={page === name ? "active" : ""}
+              >
+                <Icon size={20} />
+                <span>{name}</span>
+                {name === "Workout" && s.active && (
+                  <span className="active-dot" />
+                )}
+              </a>
+            ))}
+          <button
+            className={
+              "nav-more " +
+              (["Programs", "Nutrition", "Settings"].includes(page)
+                ? "active"
+                : "")
+            }
+            onClick={() => setMore(true)}
+            aria-haspopup="dialog"
+          >
+            <Ellipsis size={20} />
+            <span>More</span>
+          </button>
         </nav>
         <div className="sidebar-bottom">
           <div className="sidebar-quote">
@@ -268,6 +285,46 @@ export default function App() {
           </footer>
         </main>
       </div>
+      {more && (
+        <Modal title="Make it yours" onClose={() => setMore(false)}>
+          <div className="more-menu">
+            {[
+              {
+                name: "Programs",
+                description: "Your exercises and training days",
+                Icon: CalendarDays,
+              },
+              {
+                name: "Nutrition",
+                description: "Weight, protein, and simple meals",
+                Icon: Utensils,
+              },
+              {
+                name: "Settings",
+                description: "Preferences, backups, and installation",
+                Icon: SettingsIcon,
+              },
+            ].map(({ name, description, Icon }) => (
+              <a
+                href={"#" + name}
+                key={name}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setMore(false);
+                  navigate(name);
+                }}
+              >
+                <Icon size={23} />
+                <span>
+                  <strong>{name}</strong>
+                  <small>{description}</small>
+                </span>
+                <ArrowUpRight size={18} />
+              </a>
+            ))}
+          </div>
+        </Modal>
+      )}
       {found && (
         <WorkoutSummary
           state={s}

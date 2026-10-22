@@ -1,13 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Plus,
-  Search,
-  Star,
-  Settings2,
-  Dumbbell,
-  Archive,
-  Check,
-} from "lucide-react";
+import { Plus, Search, Star, Settings2, Archive, Check } from "lucide-react";
 import {
   type State,
   type Machine,
@@ -17,7 +9,9 @@ import {
   fromKg,
   toKg,
   formatDate,
+  machineVisuals,
 } from "./model";
+import { MachineVisual, visualNames } from "./MachineVisual";
 import { machineStats, nextProgram } from "./logic";
 import { change } from "./db";
 import {
@@ -217,6 +211,21 @@ export function MachineEditor({
             </Button>
           </>
         )}
+        <Field label="Machine illustration">
+          <select
+            value={m.visual ?? "auto"}
+            onChange={(event) =>
+              patch({ visual: event.target.value as Machine["visual"] })
+            }
+          >
+            {machineVisuals.map((kind) => (
+              <option value={kind} key={kind}>
+                {visualNames[kind]}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <small>A saved photo appears instead of the illustration.</small>
         {err && <p role="alert">{err}</p>}
         <div className="actions">
           <Button variant="primary" disabled={busy}>
@@ -237,6 +246,7 @@ export function Machines({
   const [query, setQuery] = useState(""),
     [filter, setFilter] = useState("All"),
     [area, setArea] = useState("All areas"),
+    [filters, setFilters] = useState(false),
     [editor, setEditor] = useState<Machine | null | undefined>(),
     [detail, setDetail] = useState<string | null>(initialSelection ?? null);
   useEffect(() => setDetail(initialSelection ?? null), [initialSelection]);
@@ -297,42 +307,54 @@ export function Machines({
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-        <select
-          aria-label="Filter by gym area"
-          value={area}
-          onChange={(e) => setArea(e.target.value)}
+        <Button
+          variant="secondary"
+          aria-expanded={filters}
+          onClick={() => setFilters(!filters)}
         >
-          <option>All areas</option>
-          {[...new Set(s.machines.map((m) => m.area).filter(Boolean))].map(
-            (a) => (
-              <option key={a}>{a}</option>
-            ),
-          )}
-        </select>
-        <select
-          aria-label="Group machines by"
-          value={grouping}
-          onChange={(e) => {
-            const value = e.target.value as State["profile"]["equipmentGroup"];
-            void change((s) => {
-              s.profile.equipmentGroup = value;
-            }).catch(() => {});
-          }}
-        >
-          <option value="none">Simple list</option>
-          <option value="area">Gym area</option>
-          <option value="type">Equipment type</option>
-          <option value="muscle">Muscle group</option>
-        </select>
+          Filters & groups
+        </Button>
       </div>
+      {filters && (
+        <div className="machine-filters">
+          <select
+            aria-label="Filter by gym area"
+            value={area}
+            onChange={(e) => setArea(e.target.value)}
+          >
+            <option>All areas</option>
+            {[...new Set(s.machines.map((m) => m.area).filter(Boolean))].map(
+              (a) => (
+                <option key={a}>{a}</option>
+              ),
+            )}
+          </select>
+          <select
+            aria-label="Group machines by"
+            value={grouping}
+            onChange={(e) => {
+              const value = e.target
+                .value as State["profile"]["equipmentGroup"];
+              void change((s) => {
+                s.profile.equipmentGroup = value;
+              }).catch(() => {});
+            }}
+          >
+            <option value="none">Simple list</option>
+            <option value="area">Gym area</option>
+            <option value="type">Equipment type</option>
+            <option value="muscle">Muscle group</option>
+          </select>
+        </div>
+      )}
       <div className="tabs wrap">
         {[
           "All",
           "Next workout",
           "Favorites",
-          "Recently used",
-          "Not recently used",
-          "Archived",
+          ...(filters
+            ? ["Recently used", "Not recently used", "Archived"]
+            : []),
         ].map((f) => (
           <button
             key={f}
@@ -362,9 +384,13 @@ export function Machines({
                 return (
                   <Card key={m.id} className="machine-card">
                     <div className="machine-card-top">
-                      <span className="icon-box">
-                        <Dumbbell />
-                      </span>
+                      <button
+                        className="machine-picture-button"
+                        aria-label={"View " + m.name}
+                        onClick={() => setDetail(m.id)}
+                      >
+                        <MachineVisual machine={m} />
+                      </button>
                       <Button
                         aria-label={`${m.favorite ? "Unfavorite" : "Favorite"} ${m.name}`}
                         variant={`icon ghost ${m.favorite ? "accent" : ""}`}
@@ -397,20 +423,11 @@ export function Machines({
                         </span>
                       ))}
                     </div>
-                    <div className="machine-stats">
-                      <div>
-                        <strong>{st.sessions}</strong>
-                        <small>sessions</small>
-                      </div>
-                      <div>
-                        <strong>{st.sets}</strong>
-                        <small>working sets</small>
-                      </div>
-                      <div>
-                        <strong>{st.last ? formatDate(st.last) : "—"}</strong>
-                        <small>last used</small>
-                      </div>
-                    </div>
+                    {st.last && (
+                      <small className="machine-last-used">
+                        Last used {formatDate(st.last)} · {st.sessions} sessions
+                      </small>
+                    )}
                     <div className="machine-card-bottom">
                       <span
                         className={
@@ -462,12 +479,11 @@ export function Machines({
       )}
       {selected && stats && (
         <Modal title={selected.name} onClose={() => setDetail(null)}>
-          {selected.photo && (
-            <img
-              className="machine-photo"
-              src={selected.photo}
-              alt={selected.name}
-            />
+          <MachineVisual machine={selected} />
+          {!selected.photo && (
+            <small className="illustration-note">
+              Equipment illustration. Add a photo of your machine in Edit setup.
+            </small>
           )}
           <p>
             {[selected.brand, selected.model, selected.area]
@@ -476,6 +492,7 @@ export function Machines({
           </p>
           <div className="stats-grid compact">
             <Stat label="Sessions" value={stats.sessions} />
+            <Stat label="Working sets" value={stats.sets} />
             <Stat label="Reps" value={stats.reps} />
             <Stat
               label={`Volume (${s.profile.units})`}

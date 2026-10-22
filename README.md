@@ -33,9 +33,13 @@ For a real production-update check, run `node scripts/verify-production-update.m
 
 ## Features
 
+- Guided workouts are the default: identify the machine, follow setup cues, complete one set, rest, then continue to the next set or machine. Progress resumes after refresh, and a mistaken completion can be undone during rest.
+- Distinct original equipment illustrations appear in Today, Machines, and the workout guide. Saved machine photos take precedence; custom equipment can select an illustration in its editor. Illustrations show a generic equipment type, not the exact brand/model or an exercise demonstration.
+- Today focuses on the next workout and visual machine plan. Progress details and machine filters expand on demand. Programs, Nutrition, and Settings are accessible through More.
 - Onboarding with current weight, units, experience, days, session target, available machines, optional equipment grouping, and program preview. Weight and machine setup can be skipped; changing units converts entered values.
 - Today view with a real machine plan, session progress, direct access to recent/planned machines, actual strength improvements, and repeat-last-workout. The plan follows the active session and its equipment substitutions.
 - Live workouts with pause/resume, persistent active sessions, warm-up/working sets, RIR, configurable rest, notes, setup details, conservative progression, and completion summaries.
+- Edit workout opens the full session editor for adding/reordering exercises, warm-ups, set corrections, and notes. Back to guided workout returns to the saved step. Optional RIR, fatigue, progression suggestions, and rest duration also remain available inside Set options & guidance.
 - Equipment replacement preserves completed sets on the original equipment. The replacement begins a distinct history.
 - Editable/custom programs and exercises, muscle coverage, technique instructions, personal exercise notes, per-machine records/setup history, machine assignments, and introductory volume.
 - Machines with custom names, area/type/muscle grouping, brand/model, settings, local photos, favorites, archiving, and usage totals.
@@ -83,6 +87,8 @@ React + TypeScript + Vite, accessible native form controls and dialogs, Lucide i
 - `src/model.ts`: typed, validated domain schema and unit/date utilities.
 - `src/seed.ts`: exercise/equipment library and initial programs; no personal history.
 - `src/logic.ts`: pure progression, records, timing, planning, and calculations.
+- `src/guide.ts` and `src/GuidedWorkout.tsx`: explicit, persistent setup/set/rest transitions and one-step workout guidance. Completion never happens automatically; the user confirms each set and chooses when to end rest.
+- `src/MachineVisual.tsx`: offline equipment illustrations and user-photo display, shared across the core screens.
 - `src/db.ts`: versioned storage, migration, transactional updates, cross-tab notification, backup validation, and recovery.
 - Individual screen modules own their UI; `src/ui.tsx` provides accessible primitives.
 - Stable IDs and schema/revision metadata leave room for future authenticated sync. A future backend must add per-user access policies, explicit conflict handling, and secure authentication; no sync behavior is simulated now.

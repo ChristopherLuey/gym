@@ -2,6 +2,12 @@
 
 Status: implemented and deployed; production verification completed on October 21, 2026 (Pacific time). See [STATUS.md](STATUS.md) for evidence and the physical-iPhone verification limit.
 
+## Simplicity revision — October 22, 2026
+
+The user's next priority is simplicity, recognizable machine visuals, and a workout that walks them through training. The default experience should present one exercise and one set at a time: find the machine, understand setup and technique, perform and confirm a set, rest, and continue. Keep a clear next action, a recoverable position after interruptions, easy equipment replacement, and undo for a mistaken set completion. Existing history, backups, and full editing capabilities must survive the redesign.
+
+Use a visual machine plan and distinct equipment illustrations, with personal machine photos overriding generic artwork. Reduce Today to the useful starting point and keep secondary statistics behind an expandable section. Put program/nutrition administration in More and advanced workout controls in Edit workout or expandable options. This refines the presentation of the requirements below; it does not remove data, privacy, offline, or deployment requirements.
+
 ## 1. Mission and completion standard
 
 Build, test, document, and deploy a production-quality personal fitness operating system named **GYM**. It must help Christopher plan gym machines, train consistently, log sets and equipment settings quickly, gain strength, and support gradual muscle and bodyweight gain. Success means opening the production site on an iPhone, seeing the planned machines, starting a workout, logging sets and setup settings in seconds, and confidently using saved history every week.

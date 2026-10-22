@@ -4,6 +4,16 @@ const text = z.string().max(5000);
 const num = z.number().finite().nonnegative();
 const timestamp = num.max(8_640_000_000_000_000);
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+export const machineVisuals = [
+  "auto",
+  "press",
+  "pulldown",
+  "row",
+  "legpress",
+  "legcurl",
+  "cable",
+  "dumbbell",
+] as const;
 export const setupSchema = z.object({
   seat: text,
   pad: text,
@@ -43,6 +53,7 @@ export const machineSchema = z.object({
       "Photos must be local JPEG, PNG, or WebP data.",
     ),
   incrementKg: z.number().positive().max(100),
+  visual: z.enum(machineVisuals).optional(),
 });
 export const exerciseSchema = z.object({
   id,
@@ -113,6 +124,13 @@ export const workoutSchema = z.object({
   restUntil: timestamp.nullable(),
   entries: z.array(entrySchema),
   notes: text,
+  guide: z
+    .object({
+      entryId: id,
+      stage: z.enum(["setup", "train"]),
+      lastSetId: id.optional(),
+    })
+    .optional(),
 });
 export const profileSchema = z.object({
   name: text,
