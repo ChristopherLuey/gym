@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { type State, type Workout, fromKg, toKg } from "./model";
 import { change } from "./db";
-import { previous, progression } from "./logic";
 import {
   completeGuidedSet,
   continueGuide,
@@ -55,14 +54,6 @@ export function GuidedWorkout({
   const next = entry?.sets.some((s) => !s.done)
     ? entry
     : w.entries.find((e) => e.sets.some((s) => !s.done));
-  const prior = entry
-    ? previous(s, entry.exerciseId, entry.machineId)
-    : undefined;
-  const suggestion = progression(prior, machine?.incrementKg, {
-    fatigue: entry?.fatigue,
-    max: entry?.max,
-    targetSets: entry?.targetSets,
-  });
   const phase = paused
     ? "pause"
     : resting
@@ -87,11 +78,7 @@ export function GuidedWorkout({
       setBusy(false);
     }
   };
-  const editSet = (patch: {
-    kg?: number;
-    reps?: number;
-    rir?: number | null;
-  }) => {
+  const editSet = (patch: { kg?: number; reps?: number }) => {
     if (!entry || !set) return;
     void change((s) => {
       const current = s.active?.entries
@@ -346,88 +333,6 @@ export function GuidedWorkout({
                   <Check size={21} /> Set complete
                 </Button>
               </div>
-              <details className="guide-options">
-                <summary>Set options</summary>
-                {prior && <p>{suggestion.reason}</p>}
-                {suggestion.kg !== null && entry.decision === "pending" && (
-                  <div className="row">
-                    <Button
-                      variant="secondary"
-                      onClick={() =>
-                        void act((w) => {
-                          const e = w.entries.find((e) => e.id === entry.id)!;
-                          e.decision = "accepted";
-                          e.suggestionKg = suggestion.kg;
-                          e.sets.forEach((s) => {
-                            if (!s.done && s.kind === "work")
-                              s.kg = suggestion.kg!;
-                          });
-                        })
-                      }
-                    >
-                      {suggestion.increase ? "Try " : "Keep "}
-                      {fromKg(suggestion.kg, s.profile.units)} {s.profile.units}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={() =>
-                        void act((w) => {
-                          w.entries.find((e) => e.id === entry.id)!.decision =
-                            "rejected";
-                        })
-                      }
-                    >
-                      Dismiss
-                    </Button>
-                  </div>
-                )}
-                <Field label="Reps left in reserve (optional)">
-                  <input
-                    type="number"
-                    min="0"
-                    max="10"
-                    inputMode="numeric"
-                    placeholder="Optional"
-                    value={set.rir ?? ""}
-                    onChange={(e) => {
-                      const n =
-                        e.target.value === "" ? null : Number(e.target.value);
-                      if (n === null || (n >= 0 && n <= 10))
-                        editSet({ rir: n });
-                    }}
-                  />
-                </Field>
-                <Field label="Fatigue">
-                  <select
-                    value={entry.fatigue}
-                    onChange={(event) => {
-                      const fatigue = event.target.value as "normal" | "high";
-                      void act((w) => {
-                        w.entries.find((e) => e.id === entry.id)!.fatigue =
-                          fatigue;
-                      });
-                    }}
-                  >
-                    <option value="normal">Manageable</option>
-                    <option value="high">More tiring than usual</option>
-                  </select>
-                </Field>
-                <Field label="Rest between sets (seconds)">
-                  <input
-                    type="number"
-                    min="0"
-                    max="900"
-                    value={entry.rest}
-                    onChange={(event) => {
-                      const rest = Number(event.target.value);
-                      if (rest >= 0 && rest <= 900)
-                        void act((w) => {
-                          w.entries.find((e) => e.id === entry.id)!.rest = rest;
-                        });
-                    }}
-                  />
-                </Field>
-              </details>
             </div>
           </div>
         </section>

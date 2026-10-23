@@ -2890,21 +2890,6 @@ details > p {
 .guide-log-hint {
   line-height: 1.65;
 }
-.guide-options {
-  margin-top: 12px;
-  padding-top: 6px;
-  border-top: 1px solid var(--border);
-}
-.guide-options summary {
-  cursor: pointer;
-  color: var(--muted);
-  font-size: 12px;
-  min-height: 44px;
-  padding: 10px 0;
-}
-.guide-options .field {
-  margin-top: 15px;
-}
 .guide-rest,
 .guide-centered {
   max-width: 640px;
@@ -3318,10 +3303,6 @@ details > p {
   .guide-training .guide-log-fields {
     margin-bottom: 8px;
     margin-top: 8px;
-  }
-  .guide-training .guide-options {
-    margin-top: 10px;
-    padding-top: 4px;
   }
 }
 
