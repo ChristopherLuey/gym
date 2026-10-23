@@ -2,6 +2,14 @@
 
 This file records evidence, not assumed completion. The full acceptance contract remains in GOAL.md.
 
+## Compact layout revision — October 22, 2026
+
+- Reduced app bars, page headings, sidebar branding, card padding, section gaps, modal headers, and onboarding spacing on desktop and mobile.
+- Placed Today’s machine illustration beside the workout title on phones. Machine-plan thumbnails keep their intended fixed width instead of expanding with the text column.
+- Tightened the workout title, set card, and rest timer while retaining readable fields, the primary action’s large touch area, safe-area spacing, and accessible controls.
+- Application behavior and stored data are unchanged. Type checks and the production build passed; browser verification is recorded in the release’s GitHub Actions run.
+- The full 27-test browser suite passed locally. After the final thumbnail-width correction, all nine affected lifecycle, accessibility, and responsive-layout checks passed again across desktop Chromium, iPhone-sized Chromium, and WebKit. Fresh desktop and mobile screenshots were visually reviewed.
+
 ## Functionality-only revision — October 22, 2026
 
 - Removed machine setup walkthroughs, technique tutorials, common-mistake sections, and the extra readiness step. Workouts open directly on the current set, with machine visuals and saved settings still available.
