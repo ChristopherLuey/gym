@@ -54,7 +54,7 @@ export function WorkoutSummary({
 }) {
   const prs = records(s, w);
   return (
-    <Modal title="You showed up." onClose={onClose}>
+    <Modal title="Workout saved" onClose={onClose}>
       <div className="summary-hero">
         <div className="summary-icon">
           <Check size={32} />
@@ -63,7 +63,6 @@ export function WorkoutSummary({
           SESSION COMPLETE · {formatDate(w.finished!)}
         </span>
         <h2>{w.name}</h2>
-        <p>One more session toward a stronger you.</p>
       </div>
       <div className="stats-grid compact">
         <Stat label="Time" value={clock(duration(w))} />
@@ -115,7 +114,7 @@ export function WorkoutSummary({
       ))}
       {w.notes && <p className="note">{w.notes}</p>}
       <Button variant="primary full" onClick={onClose}>
-        Keep the rhythm
+        Done
       </Button>
     </Modal>
   );
@@ -161,13 +160,9 @@ export function Workout({
   if (!w)
     return (
       <>
-        <Heading
-          eyebrow="MAKE TIME FOR YOURSELF"
-          title="Ready when you are."
-          subtitle="A good session starts with a simple plan."
-        />
+        <Heading title="Workout" />
         <Empty
-          title="Your next session is waiting"
+          title="No active workout"
           description="Choose a program or repeat a previous workout from Today."
           action={
             <Button variant="primary" onClick={() => navigate("Programs")}>
@@ -210,7 +205,7 @@ export function Workout({
         old.sets = old.sets.filter((s) => s.done);
         s.active.entries.splice(index + 1, 0, replacementEntry);
       } else s.active.entries.splice(index, 1, replacementEntry);
-      s.active.guide = { entryId: replacementEntry.id, stage: "setup" };
+      s.active.guide = { entryId: replacementEntry.id, stage: "train" };
       s.active.restUntil = null;
     });
     setReplacement(null);
@@ -226,10 +221,9 @@ export function Workout({
               window.scrollTo(0, 0);
             }}
           >
-            Back to guided workout
+            Back to workout
           </Button>
           <Heading
-            eyebrow="THIS TIME IS YOURS"
             title={w.name}
             subtitle={`${clock(duration(w, now))} active · ${done} of ${total} sets complete`}
             action={
@@ -307,7 +301,7 @@ export function Workout({
                       </div>
                       <Button
                         variant="icon ghost"
-                        aria-label={`Technique for ${e.exerciseName}`}
+                        aria-label={`History and notes for ${e.exerciseName}`}
                         onClick={() => setExercise(e.exerciseId)}
                       >
                         <BookOpen size={18} />
@@ -566,10 +560,7 @@ export function Workout({
                           </div>
                         )}
                       {e.decision !== "pending" && (
-                        <p className="accent small">
-                          Suggestion {e.decision}. You can still change any
-                          load.
-                        </p>
+                        <p className="accent small">Suggestion {e.decision}.</p>
                       )}
                       <Field label="Fatigue today">
                         <select
@@ -659,11 +650,7 @@ export function Workout({
             <aside className="session-aside">
               <Card>
                 <span className="eyebrow">YOUR SESSION</span>
-                <h3>{done} sets in the bank.</h3>
-                <p className="small muted">
-                  Quality repetitions, comfortable ranges, and a little
-                  patience.
-                </p>
+                <h3>{done} sets complete</h3>
                 {w.entries.map((e) => (
                   <div className="checklist-line" key={e.id}>
                     <Check
@@ -677,12 +664,6 @@ export function Workout({
                     <span>{e.machineName}</span>
                   </div>
                 ))}
-                <div className="divider" />
-                <small>
-                  Every change saves to this device. RIR means repetitions in
-                  reserve. Tap a set number to switch between working and
-                  warm-up.
-                </small>
               </Card>
             </aside>
           </div>
@@ -698,11 +679,6 @@ export function Workout({
                     ? clock(restRemaining)
                     : "Ready for your next set"}
                 </strong>
-                <small>
-                  {restRemaining > 0
-                    ? "Breathe. Reset. Go again."
-                    : "Take more time if you need it."}
-                </small>
               </div>
               <Button
                 variant="ghost"
@@ -743,7 +719,6 @@ export function Workout({
             setReplaceMachine(e.machineId);
             setReplaceExercise(e.exerciseId);
           }}
-          onTechnique={setExercise}
           onFinish={() => setConfirm("finish")}
           onDiscard={() => setConfirm("discard")}
         />
@@ -777,10 +752,7 @@ export function Workout({
           title="Find your next setup"
           onClose={() => setReplacement(null)}
         >
-          <p>
-            Completed sets stay with their original machine. Remaining sets
-            start a separate equipment history.
-          </p>
+          <p>Completed sets keep their original machine.</p>
           <Field label="Exercise">
             <select
               value={replaceExercise}
@@ -808,10 +780,7 @@ export function Workout({
                 ))}
             </select>
           </Field>
-          <p className="note">
-            Choose an appropriate alternative for this movement. Loads on
-            different machines are not directly equivalent.
-          </p>
+          <p className="note">Loads differ between machines.</p>
           <Button variant="primary" onClick={() => void replace()}>
             Use this setup
           </Button>
@@ -911,9 +880,6 @@ function SetupModal({
   const [value, setValue] = useState(entry.setup);
   return (
     <Modal title={`${entry.machineName} · setup`} onClose={onClose}>
-      <p>
-        Save this setup for this session and the next time you use this machine.
-      </p>
       <form
         onSubmit={(e) => {
           e.preventDefault();

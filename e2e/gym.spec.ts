@@ -20,11 +20,9 @@ async function onboard(page: Page) {
   await page.getByLabel("Current weight (lb)").fill("135");
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.getByRole("button", { name: "Continue", exact: true }).click();
-  await expect(page.getByText("Your first week,")).toBeVisible();
-  await page.getByRole("button", { name: "Let’s get stronger" }).click();
-  await expect(
-    page.getByRole("heading", { name: "Let’s build, Christopher." }),
-  ).toBeVisible();
+  await expect(page.getByText("Your program")).toBeVisible();
+  await page.getByRole("button", { name: "Get started" }).click();
+  await expect(page.getByRole("heading", { name: "Today" })).toBeVisible();
 }
 async function nav(page: Page, name: string) {
   if (name === "Programs" || name === "Nutrition") {
@@ -42,9 +40,7 @@ async function nav(page: Page, name: string) {
 }
 async function settings(page: Page) {
   await page.goto("./#Settings");
-  await expect(
-    page.getByRole("heading", { name: "Your space. Your settings." }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
 }
 test("onboarding units, equipment grouping, direct machine access and exercise notes persist", async ({
   page,
@@ -58,7 +54,7 @@ test("onboarding units, equipment grouping, direct machine access and exercise n
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.getByLabel("Organize machines by (optional)").selectOption("area");
   await page.getByRole("button", { name: "Continue", exact: true }).click();
-  await page.getByRole("button", { name: "Let’s get stronger" }).click();
+  await page.getByRole("button", { name: "Get started" }).click();
   await page.locator(".exercise-preview.plan-link").first().click();
   await expect(
     page.getByRole("dialog", { name: "Incline chest press", exact: true }),
@@ -155,7 +151,9 @@ test("onboarding, full workout lifecycle, setup, replacement, history and offlin
   await card
     .getByRole("button", { name: `Complete ${ex} set 1`, exact: true })
     .click();
-  await expect(page.getByText("Breathe. Reset. Go again.")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Skip", exact: true }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Skip", exact: true }).click();
   await page.reload();
   await page.getByRole("button", { name: "Edit workout", exact: true }).click();
@@ -257,7 +255,7 @@ test("onboarding, full workout lifecycle, setup, replacement, history and offlin
   await page.getByRole("button", { name: "Finish", exact: true }).click();
   await page.getByRole("button", { name: "Save workout", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "You showed up." }),
+    page.getByRole("heading", { name: "Workout saved" }),
   ).toBeVisible();
   await expect(
     page.getByText("First recorded best", { exact: false }).first(),
@@ -265,7 +263,7 @@ test("onboarding, full workout lifecycle, setup, replacement, history and offlin
   await expect(
     page.getByText("Setup: seat: 4", { exact: false }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Keep the rhythm" }).click();
+  await page.getByRole("button", { name: "Done" }).click();
   await nav(page, "Progress");
   await page.getByLabel("Machine", { exact: true }).selectOption("m-press");
   await expect(
@@ -285,9 +283,7 @@ test("onboarding, full workout lifecycle, setup, replacement, history and offlin
   await page.reload();
   await context.setOffline(true);
   await page.reload();
-  await expect(
-    page.getByRole("heading", { name: "See your strength grow." }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Progress" })).toBeVisible();
   await nav(page, "Today");
   await page.getByRole("button", { name: "Repeat last workout" }).click();
   await page.getByRole("button", { name: "Edit workout", exact: true }).click();
@@ -310,13 +306,13 @@ test("skipping weight and equipment keeps onboarding usable and assignments hone
     .getByRole("button", { name: "Skip machine setup", exact: true })
     .click();
   await page.getByRole("button", { name: "Continue", exact: true }).click();
-  await page.getByRole("button", { name: "Let’s get stronger" }).click();
+  await page.getByRole("button", { name: "Get started" }).click();
   await expect(page.locator(".exercise-preview").first()).toContainText(
     "Choose equipment",
   );
   await nav(page, "Machines");
   await expect(
-    page.getByRole("heading", { name: "Make room for your equipment" }),
+    page.getByRole("heading", { name: "No machines found" }),
   ).toBeVisible();
   await nav(page, "Today");
   await page
@@ -393,7 +389,7 @@ test("machine creation/edit, program assignment, nutrition, theme and backups", 
   await page.getByRole("button", { name: "Skip", exact: true }).click();
   await page.getByRole("button", { name: "Finish", exact: true }).click();
   await page.getByRole("button", { name: "Save workout", exact: true }).click();
-  await page.getByRole("button", { name: "Keep the rhythm" }).click();
+  await page.getByRole("button", { name: "Done" }).click();
   await nav(page, "Nutrition");
   await page.getByLabel("Weight today (lb)").fill("136");
   await page.getByRole("button", { name: "Save weigh-in" }).click();
@@ -414,9 +410,7 @@ test("machine creation/edit, program assignment, nutrition, theme and backups", 
   await page
     .getByRole("button", { name: "Skip detailed food tracking", exact: true })
     .click();
-  await expect(
-    page.getByRole("heading", { name: "Log what you need" }),
-  ).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Food log" })).toHaveCount(0);
   await page
     .getByRole("button", { name: "Enable simple food tracking", exact: true })
     .click();
@@ -525,10 +519,9 @@ test("accessible navigation and forms, cross-tab saves, custom program, archive 
   await other.goto("./#Settings");
   await page.getByLabel("Name", { exact: true }).fill("Test athlete");
   await page.getByRole("button", { name: "Save profile" }).click();
+  await expect(other.locator(".profile-chip")).toContainText("Test athlete");
   await other.goto("./#Today");
-  await expect(
-    other.getByRole("heading", { name: "Let’s build, Test athlete." }),
-  ).toBeVisible();
+  await expect(other.getByRole("heading", { name: "Today" })).toBeVisible();
   await other.close();
   await page.getByRole("button", { name: "Daylight" }).click();
   for (const name of [
@@ -581,9 +574,7 @@ test("accessible navigation and forms, cross-tab saves, custom program, archive 
   await page
     .getByRole("button", { name: "Discard session", exact: true })
     .click();
-  await expect(
-    page.getByRole("heading", { name: "Let’s build, Test athlete." }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Today" })).toBeVisible();
   await nav(page, "Machines");
   await page
     .getByRole("heading", { name: "Incline chest press", exact: true })
@@ -620,7 +611,7 @@ test("manifest, narrow layouts, empty analytics, reduced motion and invalid inpu
     ).toBe(true);
   }
   await nav(page, "Progress");
-  await expect(page.getByText("Your story starts here").first()).toBeVisible();
+  await expect(page.getByText("No data yet").first()).toBeVisible();
   const manifest = await (
     await page.request.get("manifest.webmanifest")
   ).json();

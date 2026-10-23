@@ -73,7 +73,7 @@ export function Heading({
   return (
     <header className="page-heading">
       <div>
-        <div className="eyebrow">{eyebrow}</div>
+        {eyebrow && <div className="eyebrow">{eyebrow}</div>}
         <h1>{title}</h1>
         {subtitle && <p>{subtitle}</p>}
       </div>
@@ -101,7 +101,7 @@ export function Empty({
   action,
 }: {
   title: string;
-  description: string;
+  description?: string;
   action?: ReactNode;
 }) {
   return (
@@ -110,7 +110,7 @@ export function Empty({
         <Dumbbell size={24} />
       </div>
       <h3>{title}</h3>
-      <p>{description}</p>
+      {description && <p>{description}</p>}
       {action}
     </div>
   );

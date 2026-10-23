@@ -112,7 +112,7 @@ export default function App() {
     return (
       <div className="loading">
         <Dumbbell size={36} />
-        <p>Finding your rhythm…</p>
+        <p>Loading…</p>
       </div>
     );
   if (!s.profile.onboarded && !error) return <Onboarding state={s} />;
@@ -136,7 +136,6 @@ export default function App() {
             GYM<span className="accent">.</span>
           </span>
         </a>
-        <span className="sidebar-label">YOUR TRAINING SPACE</span>
         <nav aria-label="Main navigation">
           {nav
             .filter(([name]) => name !== "Programs" && name !== "Nutrition")
@@ -173,11 +172,6 @@ export default function App() {
           </button>
         </nav>
         <div className="sidebar-bottom">
-          <div className="sidebar-quote">
-            Progress is built
-            <br />
-            <span>one session at a time.</span>
-          </div>
           <a
             href="#Settings"
             className={`settings-link ${page === "Settings" ? "active" : ""}`}
@@ -191,10 +185,7 @@ export default function App() {
           </a>
           <div className="profile-chip">
             <div>{(s.profile.name || "Y").slice(0, 1).toUpperCase()}</div>
-            <span>
-              {s.profile.name || "Your profile"}
-              <small>Building stronger</small>
-            </span>
+            <span>{s.profile.name || "Your profile"}</span>
           </div>
         </div>
       </aside>
@@ -204,7 +195,7 @@ export default function App() {
             GYM<span>.</span>
           </a>
           <span className="breadcrumb">
-            YOUR PERSONAL FITNESS OS <span>/</span> {page.toUpperCase()}
+            GYM <span>/</span> {page.toUpperCase()}
           </span>
           <div className="row">
             <span className="save-status">
@@ -277,34 +268,25 @@ export default function App() {
           ) : (
             <Settings state={s} />
           )}
-          <footer className="page-footer">
-            <span>GYM · Built for the long run.</span>
-            <span>
-              Private. Local. Yours. <ArrowUpRight size={12} />
-            </span>
-          </footer>
         </main>
       </div>
       {more && (
-        <Modal title="Make it yours" onClose={() => setMore(false)}>
+        <Modal title="More" onClose={() => setMore(false)}>
           <div className="more-menu">
             {[
               {
                 name: "Programs",
-                description: "Your exercises and training days",
                 Icon: CalendarDays,
               },
               {
                 name: "Nutrition",
-                description: "Weight, protein, and simple meals",
                 Icon: Utensils,
               },
               {
                 name: "Settings",
-                description: "Preferences, backups, and installation",
                 Icon: SettingsIcon,
               },
-            ].map(({ name, description, Icon }) => (
+            ].map(({ name, Icon }) => (
               <a
                 href={"#" + name}
                 key={name}
@@ -317,7 +299,6 @@ export default function App() {
                 <Icon size={23} />
                 <span>
                   <strong>{name}</strong>
-                  <small>{description}</small>
                 </span>
                 <ArrowUpRight size={18} />
               </a>

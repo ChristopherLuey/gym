@@ -33,15 +33,15 @@ For a real production-update check, run `node scripts/verify-production-update.m
 
 ## Features
 
-- Guided workouts are the default: identify the machine, follow setup cues, complete one set, rest, then continue to the next set or machine. Progress resumes after refresh, and a mistaken completion can be undone during rest.
+- Workouts open directly on the current set: machine visual, weight, repetitions, and Set complete. Rest leads to Next set or Next exercise. Progress resumes after refresh, and a mistaken completion can be undone during rest. There are no machine tutorials or extra readiness steps.
 - Distinct original equipment illustrations appear in Today, Machines, and the workout guide. Saved machine photos take precedence; custom equipment can select an illustration in its editor. Illustrations show a generic equipment type, not the exact brand/model or an exercise demonstration.
 - Today focuses on the next workout and visual machine plan. Progress details and machine filters expand on demand. Programs, Nutrition, and Settings are accessible through More.
 - Onboarding with current weight, units, experience, days, session target, available machines, optional equipment grouping, and program preview. Weight and machine setup can be skipped; changing units converts entered values.
 - Today view with a real machine plan, session progress, direct access to recent/planned machines, actual strength improvements, and repeat-last-workout. The plan follows the active session and its equipment substitutions.
 - Live workouts with pause/resume, persistent active sessions, warm-up/working sets, RIR, configurable rest, notes, setup details, conservative progression, and completion summaries.
-- Edit workout opens the full session editor for adding/reordering exercises, warm-ups, set corrections, and notes. Back to guided workout returns to the saved step. Optional RIR, fatigue, progression suggestions, and rest duration also remain available inside Set options & guidance.
+- Edit workout opens the full session editor for adding/reordering exercises, warm-ups, set corrections, and notes. Back to workout returns to the current set. Optional RIR, fatigue, progression suggestions, and rest duration remain inside Set options. Machine setup edits saved seat/pad/handle settings without a tutorial.
 - Equipment replacement preserves completed sets on the original equipment. The replacement begins a distinct history.
-- Editable/custom programs and exercises, muscle coverage, technique instructions, personal exercise notes, per-machine records/setup history, machine assignments, and introductory volume.
+- Editable/custom programs and exercises, muscle coverage, personal exercise notes, per-machine records/setup history, machine assignments, and introductory volume.
 - Machines with custom names, area/type/muscle grouping, brand/model, settings, local photos, favorites, archiving, and usage totals.
 - Weight, training volume, machine/exercise strength, machine usage, records, optional measurements, and history.
 - Simple protein/calorie entries, reusable meals, weekly weight averages and direction relative to a target, adjustable goals, and optional detailed tracking.
@@ -78,7 +78,7 @@ Timers use absolute timestamps and recover after backgrounding. iOS can suspend 
 - Introductory volume caps each exercise at two working sets until the user elects to increase it. This is intentionally recovery-driven rather than a mandatory increase after 14 days.
 - Protein defaults to 1.6 g/kg of the latest weight, editable by the user. This falls within the ISSN 1.4–2.0 g/kg/day guidance for most exercising adults: [ISSN position stand](https://pmc.ncbi.nlm.nih.gov/articles/PMC5477153/).
 - Calories are optional and entered by the user. Height is not used to invent a calorie prescription.
-- “Muscle growth” summarizes training and weight signals; it does not measure muscle mass or predict exact gains.
+- The progress overview summarizes recorded sessions, machines, and improved load records. It does not measure muscle mass or predict exact gains.
 
 ## Architecture
 
@@ -87,7 +87,7 @@ React + TypeScript + Vite, accessible native form controls and dialogs, Lucide i
 - `src/model.ts`: typed, validated domain schema and unit/date utilities.
 - `src/seed.ts`: exercise/equipment library and initial programs; no personal history.
 - `src/logic.ts`: pure progression, records, timing, planning, and calculations.
-- `src/guide.ts` and `src/GuidedWorkout.tsx`: explicit, persistent setup/set/rest transitions and one-step workout guidance. Completion never happens automatically; the user confirms each set and chooses when to end rest.
+- `src/guide.ts` and `src/GuidedWorkout.tsx`: persistent set/rest transitions. Completion never happens automatically; the user confirms each set and chooses when to end rest. Older backups containing a setup stage open directly on their saved set, without changing logged data.
 - `src/MachineVisual.tsx`: offline equipment illustrations and user-photo display, shared across the core screens.
 - `src/db.ts`: versioned storage, migration, transactional updates, cross-tab notification, backup validation, and recovery.
 - Individual screen modules own their UI; `src/ui.tsx` provides accessible primitives.

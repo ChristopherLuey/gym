@@ -52,11 +52,7 @@ export function Settings({ state: s }: { state: State }) {
   };
   return (
     <>
-      <Heading
-        eyebrow="MAKE IT YOURS"
-        title="Your space. Your settings."
-        subtitle="Simple controls for training and peace of mind."
-      />
+      <Heading title="Settings" />
       <div className="split-grid">
         <Card>
           <SectionTitle title="Your profile" />
@@ -133,10 +129,7 @@ export function Settings({ state: s }: { state: State }) {
                 />
               </Field>
             </div>
-            <Field
-              label="Preferences or limitations (optional)"
-              hint="Only what you choose to record. No restrictions are assumed."
-            >
+            <Field label="Preferences or limitations (optional)">
               <textarea
                 value={p.limitations}
                 onChange={(e) => patch({ limitations: e.target.value })}
@@ -145,10 +138,7 @@ export function Settings({ state: s }: { state: State }) {
             </Field>
             <Button variant="primary">Save profile</Button>
           </form>
-          <p className="muted small">
-            Change training days in each program. Existing loads are converted
-            for display when units change; history retains its original meaning.
-          </p>
+          <p className="muted small">Training days are editable in Programs.</p>
         </Card>
         <div className="stack">
           <Card>
@@ -177,23 +167,16 @@ export function Settings({ state: s }: { state: State }) {
               title="Private by design"
               extra={<Shield size={20} className="accent" />}
             />
-            <p>
-              Your workouts, machine settings, and body metrics live in this
-              browser’s IndexedDB. No account, advertising, or analytics service
-              receives them.
-            </p>
             <div className="note">
               <strong>Local to this device</strong>
               <p>
-                Automatic cloud sync is not configured. Your iPhone and laptop
-                keep separate data. Export a backup and import it on another
-                device to transfer your history.
+                No automatic sync. Use export/import to transfer data between
+                devices.
               </p>
             </div>
             <small>
-              Import replaces the receiving device’s data after creating a
-              recovery copy. It does not merge two independently edited
-              histories.
+              Import replaces data; it does not merge histories. A recovery copy
+              is saved first.
             </small>
           </Card>
         </div>
@@ -203,10 +186,7 @@ export function Settings({ state: s }: { state: State }) {
           title="Backups & recovery"
           extra={<Database size={20} />}
         />
-        <p>
-          Keep an exported copy somewhere you trust. Browser storage can be
-          cleared or evicted; private browsing may not retain it.
-        </p>
+        <p>Export regularly. Clearing browser storage can delete your data.</p>
         <div className="actions left">
           <Button
             variant="primary"
@@ -280,31 +260,30 @@ export function Settings({ state: s }: { state: State }) {
         )}
       </Card>
       <Card>
-        <SectionTitle
-          title="At home on your iPhone"
-          extra={<Smartphone size={20} />}
-        />
-        <ol className="install-steps">
-          <li>
-            Open{" "}
-            <a href="https://christopherluey.github.io/gym/">
-              christopherluey.github.io/gym
-            </a>{" "}
-            in Safari.
-          </li>
-          <li>Tap Share, then Add to Home Screen.</li>
-          <li>Keep the name GYM and tap Add.</li>
-          <li>
-            Open GYM from its icon while online once, then look for “Offline
-            ready.”
-          </li>
-        </ol>
-        <p className="muted small">
-          Your home-screen app and browser may use different storage contexts.
-          Export a backup before moving between them. Offline timers work while
-          the app is open; iOS may suspend sound or notifications in the
-          background.
-        </p>
+        <details>
+          <summary className="row">
+            <Smartphone size={20} /> Install on iPhone
+          </summary>
+          <ol className="install-steps">
+            <li>
+              Open{" "}
+              <a href="https://christopherluey.github.io/gym/">
+                christopherluey.github.io/gym
+              </a>{" "}
+              in Safari.
+            </li>
+            <li>Tap Share, then Add to Home Screen.</li>
+            <li>Keep the name GYM and tap Add.</li>
+            <li>
+              Open GYM from its icon while online once, then look for “Offline
+              ready.”
+            </li>
+          </ol>
+          <p className="muted small">
+            Export a backup before moving between Safari and the home-screen
+            app; their storage may differ.
+          </p>
+        </details>
       </Card>
       {message && (
         <div className="notice" role="status">

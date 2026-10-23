@@ -6,9 +6,12 @@ export function guidePosition(w: Workout) {
     selected && (w.restUntil !== null || selected.sets.some((s) => !s.done))
       ? selected
       : w.entries.find((e) => e.sets.some((s) => !s.done));
-  const stage =
-    w.guide && entry?.id === w.guide.entryId ? w.guide.stage : "setup";
-  return { entry, set: entry?.sets.find((s) => !s.done), stage };
+  // Older backups can contain a setup stage; all sessions now open on the set.
+  return {
+    entry,
+    set: entry?.sets.find((s) => !s.done),
+    stage: "train" as const,
+  };
 }
 /** Only advances after the user ends rest; timestamps survive backgrounding. */
 export function continueGuide(w: Workout) {
@@ -20,7 +23,7 @@ export function continueGuide(w: Workout) {
   if (next)
     w.guide = {
       entryId: next.id,
-      stage: next.id === current?.id ? "train" : "setup",
+      stage: "train",
     };
   else w.guide = undefined;
 }

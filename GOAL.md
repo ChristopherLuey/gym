@@ -261,3 +261,15 @@ The final report must include:
 8. Any remaining setup requiring user action/authorization, with the concrete blocker.
 
 An incomplete requirement must remain visible rather than being silently removed from this contract. No success claim until the production app is actually verified.
+
+## 17. User refinement: functionality without tutorials — October 22, 2026
+
+This later instruction supersedes earlier requirements for visible technique tutorials, setup walkthroughs, and descriptive coaching copy. Keep machine visuals and a sequential workout, but make the current set immediately usable.
+
+- Start/resume goes directly to weight, repetitions, and Set complete. Remove the setup stage and readiness confirmation; after rest, move directly to the next set or exercise.
+- Retain machine pictures, saved machine settings, replacement, pause/resume, undo, editing, notes, history, and progress calculations.
+- Remove technique instructions and common-mistake tutorials from exercise details and creation forms. Preserve existing stored fields for backup compatibility.
+- Use plain screen names and short functional labels. Remove motivational slogans, repeated instructions, and unnecessary empty-state paragraphs throughout the app.
+- Keep necessary save errors, import/replacement warnings, and local-storage/sync limitations concise. Put optional protein references and installation help behind disclosure controls.
+- Keep the primary completion action visible above the mobile navigation at the tested iPhone sizes. Preserve accessible labels and large controls.
+- Verify that old saved sessions, machine settings, history, backups, offline operation, and deployment updates continue working.

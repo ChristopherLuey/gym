@@ -128,10 +128,7 @@ function Chart({
       </ResponsiveContainer>
     </div>
   ) : (
-    <Empty
-      title="Your story starts here"
-      description={`Log your first ${label.toLowerCase()} entry to see your trend.`}
-    />
+    <Empty title="No data yet" />
   );
 }
 export default function Progress({
@@ -198,9 +195,7 @@ export default function Progress({
   return (
     <>
       <Heading
-        eyebrow="THE WORK ADDS UP"
-        title="See your strength grow."
-        subtitle="Your progress, grounded in what you actually do."
+        title="Progress"
         action={
           <div className="range-control">
             {[
@@ -265,28 +260,11 @@ export default function Progress({
           <Card className="growth-overview">
             <TrendingUp className="accent" />
             <div>
-              <span className="eyebrow">
-                MUSCLE GROWTH · THE BUILDING BLOCKS
-              </span>
-              <h2>
-                {weekly.length
-                  ? "You’re putting in the work."
-                  : "Build a rhythm you can keep."}
-              </h2>
+              <h2>Overview</h2>
               <p>
-                {weekly.length} sessions this week. {stats.length} machines used
-                in this view.{" "}
-                {weightData.length >= 2
-                  ? `Bodyweight moved from ${weightData[0].value} to ${weightData.at(-1)!.value} ${s.profile.units}.`
-                  : "Add regular weigh-ins to understand your weight trend."}{" "}
-                {pbs.filter((r) => !r.first).length} improvements over an
-                earlier load record in this view, each measured on the same
-                exercise and machine.
+                {weekly.length} sessions this week · {stats.length} machines ·{" "}
+                {pbs.filter((r) => !r.first).length} load records improved
               </p>
-              <small>
-                These are training and bodyweight signals, not a measurement of
-                muscle mass. Different machines have different resistance.
-              </small>
             </div>
           </Card>
           <div className="split-grid">
@@ -354,9 +332,8 @@ export default function Progress({
               label={`Heaviest working set (${s.profile.units})`}
             />
             <p className="small muted">
-              Each point is the heaviest completed working set for this exact
-              exercise and machine. Compare equivalent equipment by switching
-              this filter; records stay separate.
+              Heaviest working load per session, for the selected exercise and
+              machine.
             </p>
           </Card>
           <div className="split-grid">
@@ -394,10 +371,7 @@ export default function Progress({
                   </div>
                 ))
               ) : (
-                <Empty
-                  title="Room for your first best"
-                  description="Complete working sets to establish your machine-specific load records."
-                />
+                <Empty title="No records yet" />
               )}
             </Card>
           </div>
@@ -424,10 +398,7 @@ export default function Progress({
                   </div>
                 ))
             ) : (
-              <p className="muted">
-                Optional. Track chest, shoulders, arms, waist, or thighs at your
-                own pace.
-              </p>
+              <p className="muted">No measurements yet.</p>
             )}
           </Card>
         </>
@@ -496,10 +467,7 @@ export default function Progress({
               </Card>
             ))
           ) : (
-            <Empty
-              title="Get to know your gym"
-              description="Your machine usage will appear after your first completed session."
-            />
+            <Empty title="No machine usage yet" />
           )}
         </>
       )}
@@ -513,9 +481,8 @@ export default function Progress({
               working sets.
             </p>
             <p className="muted small">
-              Plan counts reflect your current schedule. A planned completion
-              matches a program and its scheduled calendar day. Repeat sessions
-              and sessions on other days are tracked as extras.
+              Scheduled program and day must match; other sessions count as
+              extras.
             </p>
           </Card>
           {history.length ? (
@@ -546,10 +513,7 @@ export default function Progress({
                 </button>
               ))
           ) : (
-            <Empty
-              title="Your training story"
-              description="Finish a workout to begin your history. Every real session matters."
-            />
+            <Empty title="No workouts yet" />
           )}
         </>
       )}

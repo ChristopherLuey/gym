@@ -57,9 +57,9 @@ export function ExerciseDetail({
           </span>
         ))}
       </div>
-      <h3>Find your setup</h3>
+      <h3>Equipment</h3>
       <p>{e.equipment}</p>
-      <h3>Your prescriptions</h3>
+      <h3>Planned sets</h3>
       {s.programs
         .filter((p) => !p.archived)
         .flatMap((p) =>
@@ -76,14 +76,6 @@ export function ExerciseDetail({
               </p>
             )),
         )}
-      <h3>Move with control</h3>
-      <p>{e.instructions}</p>
-      <h3>Common mistakes</h3>
-      <p>{e.mistakes}</p>
-      <p className="note">
-        Use a comfortable range and stop an exercise if it causes pain. Leave a
-        few repetitions in reserve while learning.
-      </p>
       <h3>Alternatives</h3>
       <p>
         {e.alternatives
@@ -94,8 +86,7 @@ export function ExerciseDetail({
               : null;
           })
           .filter(Boolean)
-          .join(" · ") ||
-          "Choose another exercise for the same muscle group from your library."}
+          .join(" · ") || "None saved."}
       </p>
       <h3>Personal records by machine</h3>
       {bests.size ? (
@@ -108,13 +99,9 @@ export function ExerciseDetail({
           </div>
         ))
       ) : (
-        <p className="muted">
-          Complete a working set to establish your first load record.
-        </p>
+        <p className="muted">No records yet.</p>
       )}
-      <p className="small muted">
-        Heaviest completed working load. Each machine keeps its own record.
-      </p>
+      <p className="small muted">Heaviest working load per machine.</p>
       <Field label="Personal exercise notes">
         <textarea
           value={notes}
@@ -166,9 +153,7 @@ export function ExerciseDetail({
             </div>
           ))
       ) : (
-        <p className="muted">
-          Your completed sets will appear here, grouped by machine.
-        </p>
+        <p className="muted">No completed sets yet.</p>
       )}
     </Modal>
   );
@@ -229,18 +214,6 @@ export function ExerciseEditor({ onClose }: { onClose: () => void }) {
           <input
             value={e.equipment}
             onChange={(v) => setE({ ...e, equipment: v.target.value })}
-          />
-        </Field>
-        <Field label="Technique instructions">
-          <textarea
-            value={e.instructions}
-            onChange={(v) => setE({ ...e, instructions: v.target.value })}
-          />
-        </Field>
-        <Field label="Common mistakes">
-          <textarea
-            value={e.mistakes}
-            onChange={(v) => setE({ ...e, mistakes: v.target.value })}
           />
         </Field>
         <Button variant="primary">Create exercise</Button>
@@ -502,9 +475,7 @@ export function Programs({
   return (
     <>
       <Heading
-        eyebrow="BUILT FOR CONSISTENCY"
-        title="A plan with purpose."
-        subtitle="Full body. Three days. Room to grow."
+        title="Programs"
         action={
           <Button variant="primary" onClick={() => setEditor(null)}>
             <Plus size={18} />
@@ -515,18 +486,8 @@ export function Programs({
       <Card className="foundation">
         <div>
           <span className="eyebrow">
-            {s.profile.intro ? "FOUNDATION PHASE" : "STANDARD VOLUME"}
+            {s.profile.intro ? "1–2 SETS PER EXERCISE" : "FULL PROGRAM VOLUME"}
           </span>
-          <h3>
-            {s.profile.intro
-              ? "Start steady. Earn the next step."
-              : "Keep progression in your control."}
-          </h3>
-          <p>
-            {s.profile.intro
-              ? "Use 1–2 sets per exercise during your first two weeks. When recovery and technique feel good, switch to your full prescriptions."
-              : "Your program uses its saved set counts. You can return to reduced volume whenever recovery calls for it."}
-          </p>
         </div>
         <Button
           variant="secondary"
@@ -634,10 +595,7 @@ export function Programs({
             </div>
           ))}
         </div>
-        <p className="small muted">
-          Secondary muscle work is listed in exercise details but excluded here
-          to avoid double counting.
-        </p>
+        <p className="small muted">Primary muscles only.</p>
       </Card>
       <Card>
         <SectionTitle

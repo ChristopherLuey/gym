@@ -54,9 +54,7 @@ export function Nutrition({ state: s }: { state: State }) {
   return (
     <>
       <Heading
-        eyebrow="FUEL THE WORK"
-        title="A little stronger. Well fed."
-        subtitle="Keep nutrition simple, and make consistency easier."
+        title="Nutrition"
         action={
           <Button variant="secondary" onClick={() => setGoal(true)}>
             Adjust goals
@@ -80,7 +78,7 @@ export function Nutrition({ state: s }: { state: State }) {
             detail={
               current
                 ? `Logged ${formatDate(current.date)}`
-                : "Start with a current measurement"
+                : "No weigh-ins yet"
             }
           />
         </Card>
@@ -109,25 +107,30 @@ export function Nutrition({ state: s }: { state: State }) {
                   <em>{s.profile.units}</em>
                 </>
               ) : (
-                "Your pace"
+                "—"
               )
             }
             detail={
               current && s.profile.targetKg
                 ? `${fromKg(s.profile.targetKg - current.kg, s.profile.units)} ${s.profile.units} from your target`
-                : "An optional direction, never a deadline"
+                : "No target set"
             }
           />
         </Card>
       </div>
-      <p className="note">
-        {trend.delta === null
-          ? "Log weigh-ins across two weeks to compare your weekly averages."
-          : `${trend.delta > 0 ? "+" : ""}${fromKg(trend.delta, s.profile.units)} ${s.profile.units} compared with the previous seven-day average (${trend.priorCount} earlier weigh-ins). ${trend.direction === "toward" ? "Your average is moving toward your target." : trend.direction === "away" ? "Your average is moving away from your target. Revisit your meals, recovery, and goal if this continues." : trend.direction === "steady" ? "Your distance from the target is unchanged." : "Set a target if you want to compare direction."}`}
-      </p>
+      {trend.delta !== null && (
+        <p className="note">
+          {trend.delta > 0 ? "+" : ""}
+          {fromKg(trend.delta, s.profile.units)} {s.profile.units} weekly
+          average change
+          {s.profile.targetKg
+            ? ` · ${trend.direction === "toward" ? "Toward target" : trend.direction === "away" ? "Away from target" : "Unchanged"}`
+            : ""}
+        </p>
+      )}
       <div className="split-grid">
         <Card>
-          <SectionTitle title="A quick weigh-in" />
+          <SectionTitle title="Weight" />
           <form
             onSubmit={async (e) => {
               e.preventDefault();
@@ -147,7 +150,7 @@ export function Nutrition({ state: s }: { state: State }) {
           >
             <Field
               label={`Weight today (${s.profile.units})`}
-              hint="One entry per day. A new entry updates today’s value."
+              hint="Updates today’s weight."
             >
               <input
                 type="number"
@@ -167,10 +170,6 @@ export function Nutrition({ state: s }: { state: State }) {
             </Button>
           </form>
           <div className="divider" />
-          <p className="muted small">
-            Compare weekly averages instead of individual days. Gradual,
-            sustainable changes are the goal.
-          </p>
           {weights
             .slice(-4)
             .reverse()
@@ -185,7 +184,7 @@ export function Nutrition({ state: s }: { state: State }) {
         </Card>
         <Card>
           <SectionTitle
-            title="Protein, made simple"
+            title="Protein"
             extra={<Utensils size={18} className="accent" />}
           />
           <div className="protein-total">
@@ -204,19 +203,18 @@ export function Nutrition({ state: s }: { state: State }) {
               ? `${Math.max(0, goalProtein - proteinTotal)} g to your daily goal`
               : "Add a weight or set your own protein goal."}
           </p>
-          <p className="small">
-            A starting point of 1.6 g/kg sits within the ISSN’s 1.4–2.0 g/kg/day
-            range for most exercising adults. Adjust it for your preferences and
-            any restrictions you choose to record.
-          </p>
-          <a
-            className="text-button"
-            href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5477153/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Read the protein guidance ↗
-          </a>
+          <details>
+            <summary>Protein target</summary>
+            <p className="small">Default: 1.6 g/kg daily. Adjust in Goals.</p>
+            <a
+              className="text-button"
+              href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5477153/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Source: ISSN ↗
+            </a>
+          </details>
           <div className="divider" />
           <Button
             variant="ghost"
@@ -235,7 +233,7 @@ export function Nutrition({ state: s }: { state: State }) {
       {s.profile.tracking && (
         <div className="split-grid">
           <Card>
-            <SectionTitle title="Log what you need" />
+            <SectionTitle title="Food log" />
             <Field label="Logging date">
               <input
                 type="date"
@@ -294,10 +292,7 @@ export function Nutrition({ state: s }: { state: State }) {
               <Button variant="primary space-top">Add entry</Button>
             </form>
             <h3>Quick add</h3>
-            <p className="muted small">
-              Starter meals are editable estimates. Check your own portions and
-              labels.
-            </p>
+            <p className="muted small">Estimated portions · editable</p>
             <div className="meal-list">
               {s.meals.map((m) => (
                 <div key={m.id}>
@@ -365,10 +360,7 @@ export function Nutrition({ state: s }: { state: State }) {
                 </div>
               ))
             ) : (
-              <p className="muted">
-                No entries yet. Log a meal or your daily total, whichever fits
-                your routine.
-              </p>
+              <p className="muted">No entries yet.</p>
             )}
             <div className="divider" />
             <Stat
@@ -380,10 +372,6 @@ export function Nutrition({ state: s }: { state: State }) {
                   : "No calorie target set"
               }
             />
-            <p className="note">
-              No calorie target is estimated from your height. You can set your
-              own target and adjust it using your weight trend and preferences.
-            </p>
           </Card>
         </div>
       )}

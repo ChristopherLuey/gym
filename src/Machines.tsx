@@ -185,12 +185,9 @@ export function MachineEditor({
             />
           </Field>
         </div>
-        <h3>Make setup effortless</h3>
+        <h3>Machine settings</h3>
         <SetupFields value={m.setup} onChange={(setup) => patch({ setup })} />
-        <Field
-          label="Machine photo (optional)"
-          hint="Stored on this device and included in backups. Maximum 1 MB."
-        >
+        <Field label="Machine photo (optional)" hint="Maximum 1 MB.">
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp"
@@ -225,7 +222,6 @@ export function MachineEditor({
             ))}
           </select>
         </Field>
-        <small>A saved photo appears instead of the illustration.</small>
         {err && <p role="alert">{err}</p>}
         <div className="actions">
           <Button variant="primary" disabled={busy}>
@@ -287,9 +283,7 @@ export function Machines({
   return (
     <>
       <Heading
-        eyebrow="KNOW YOUR FLOOR"
-        title="Your machines."
-        subtitle="A familiar setup. A better session."
+        title="Machines"
         action={
           <Button variant="primary" onClick={() => setEditor(null)}>
             <Plus size={18} />
@@ -461,8 +455,7 @@ export function Machines({
         ))}
       {!shown.length && (
         <Empty
-          title="Make room for your equipment"
-          description="Add a machine or change your filters to find the right setup."
+          title="No machines found"
           action={<Button onClick={() => setEditor(null)}>Add machine</Button>}
         />
       )}
@@ -480,11 +473,6 @@ export function Machines({
       {selected && stats && (
         <Modal title={selected.name} onClose={() => setDetail(null)}>
           <MachineVisual machine={selected} />
-          {!selected.photo && (
-            <small className="illustration-note">
-              Equipment illustration. Add a photo of your machine in Edit setup.
-            </small>
-          )}
           <p>
             {[selected.brand, selected.model, selected.area]
               .filter(Boolean)
@@ -511,9 +499,7 @@ export function Machines({
               </div>
             ))}
           {!Object.values(selected.setup).some(Boolean) && (
-            <p className="muted">
-              Add your seat, handle, and pad settings to make next time easier.
-            </p>
+            <p className="muted">No saved settings.</p>
           )}
           <h3>Exercises performed</h3>
           {stats.exercises.length ? (

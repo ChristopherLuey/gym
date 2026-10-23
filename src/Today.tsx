@@ -57,7 +57,7 @@ export function Today({
           s.exercises.find((e) => e.id === p.exerciseId)?.name ?? "Exercise",
         machineName:
           s.machines.find((m) => m.id === p.machineId && !m.archived)?.name ??
-          "Choose equipment in your session",
+          "Choose equipment",
         sets: s.profile.intro ? Math.min(p.sets, 2) : p.sets,
         done: false,
       }));
@@ -79,8 +79,7 @@ export function Today({
           month: "long",
           day: "numeric",
         })}
-        title={`Let’s build, ${s.profile.name || "you"}.`}
-        subtitle="Your next step is all you need."
+        title="Today"
       />
       <section className="today-start card">
         <div className="today-start-copy">
@@ -93,16 +92,13 @@ export function Today({
                 : "NEXT WORKOUT"}
           </span>
           <h2>
-            {s.active?.name ?? next?.program.name ?? "Make your first plan"}
+            {s.active?.name ?? next?.program.name ?? "No program selected"}
           </h2>
           <p>
             {plan.length} exercises · {s.profile.minutes} min target
             {!today && !s.active && next
               ? " · " + formatDate(next.date.getTime())
               : ""}
-          </p>
-          <p className="today-coach-copy">
-            We’ll walk through each machine, set, and rest together.
           </p>
           <Button
             variant="primary large full"
@@ -122,11 +118,6 @@ export function Today({
                 : "Create a program"}
             <ArrowRight size={18} />
           </Button>
-          <small>
-            {s.active
-              ? "Saved on this device. Pick up where you left off."
-              : "Start light. Get comfortable. Build from there."}
-          </small>
         </div>
         {first && (
           <div className="today-first-machine">
@@ -203,8 +194,7 @@ export function Today({
           </div>
         ) : (
           <Empty
-            title="A plan makes it easier"
-            description="Pick your exercises and machines once. We’ll guide you from there."
+            title="No program yet"
             action={
               <Button onClick={() => navigate("Programs")}>
                 Build a program
@@ -268,7 +258,7 @@ export function Today({
                   " " +
                   s.profile.units +
                   " · weekly average change"
-                : "Log across two weeks to see your trend."}
+                : "No trend yet."}
             </p>
             <ArrowLink onClick={() => navigate("Nutrition")}>
               Log weight
@@ -300,10 +290,7 @@ export function Today({
                 </div>
               ))
             ) : (
-              <p className="muted">
-                Your first workouts establish a baseline. Your improvements will
-                appear here.
-              </p>
+              <p className="muted">No records yet.</p>
             )}
           </Card>
           <Card>
@@ -325,18 +312,11 @@ export function Today({
                 </button>
               ))
             ) : (
-              <p className="muted">
-                Your recently used machines will appear after your first
-                workout.
-              </p>
+              <p className="muted">No machines used yet.</p>
             )}
           </Card>
         </div>
       </details>
-      <p className="today-recovery">
-        Leave roughly a day between full-body sessions. Still feeling fatigued?
-        Take more time to recover.
-      </p>
     </div>
   );
 }

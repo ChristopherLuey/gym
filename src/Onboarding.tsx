@@ -55,7 +55,6 @@ export function Onboarding({ state }: { state: State }) {
         <b>
           GYM<span>.</span>
         </b>
-        <small>YOUR TRAINING, IN RHYTHM</small>
       </div>
       <div className="onboard-card">
         <div className="step-dots">
@@ -63,27 +62,8 @@ export function Onboarding({ state }: { state: State }) {
             <span key={n} className={step >= n ? "active" : ""} />
           ))}
         </div>
-        <div className="eyebrow">
-          LET'S BUILD SOMETHING LASTING · {step + 1} / 3
-        </div>
-        <h1>
-          {
-            [
-              "A stronger you.\nOne session at a time.",
-              "Make it your routine.",
-              "Your first week,\nready to go.",
-            ][step]
-          }
-        </h1>
-        <p>
-          {
-            [
-              "A little about you. Your training stays private on this device.",
-              "A simple full-body plan, built around the equipment you have.",
-              "Start with two working sets per exercise. Build confidence, then build volume as you recover well.",
-            ][step]
-          }
-        </p>
+        <div className="eyebrow">STEP {step + 1} / 3</div>
+        <h1>{["Profile", "Schedule & equipment", "Your program"][step]}</h1>
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -93,7 +73,7 @@ export function Onboarding({ state }: { state: State }) {
         >
           {step === 0 && (
             <>
-              <Field label="What should we call you?">
+              <Field label="Name">
                 <input
                   value={profile.name}
                   onChange={(e) => patch({ name: e.target.value })}
@@ -127,7 +107,7 @@ export function Onboarding({ state }: { state: State }) {
                 </Field>
                 <Field
                   label={`Current weight (${profile.units})`}
-                  hint="Optional — you can add this later."
+                  hint="Optional"
                 >
                   <input
                     type="number"
@@ -165,10 +145,6 @@ export function Onboarding({ state }: { state: State }) {
                     <option value="experienced">Training consistently</option>
                   </select>
                 </Field>
-              </div>
-              <div className="note">
-                Your focus: muscle, strength, and a fuller physique. Height: 165
-                cm. All details remain editable.
               </div>
             </>
           )}
@@ -209,10 +185,7 @@ export function Onboarding({ state }: { state: State }) {
                   ))}
                 </select>
               </Field>
-              <Field
-                label="Organize machines by (optional)"
-                hint="You can name and change gym areas on the Machines screen."
-              >
+              <Field label="Organize machines by (optional)">
                 <select
                   value={profile.equipmentGroup}
                   onChange={(e) =>
@@ -230,7 +203,7 @@ export function Onboarding({ state }: { state: State }) {
               </Field>
               <Field
                 label="Available equipment"
-                hint="These are starter suggestions. Uncheck anything unavailable, or skip setup."
+                hint="Select what’s available."
               >
                 <div className="check-grid">
                   {state.machines.map((m) => (
@@ -302,11 +275,6 @@ export function Onboarding({ state }: { state: State }) {
                   </div>
                 ))}
               </div>
-              <div className="note">
-                The first two weeks are about finding your rhythm. Keep a few
-                reps in reserve, use comfortable ranges, and adjust your plan to
-                your recovery.
-              </div>
             </>
           )}
           <div className="actions">
@@ -321,15 +289,12 @@ export function Onboarding({ state }: { state: State }) {
               </Button>
             )}
             <Button variant="primary" disabled={busy}>
-              {step < 2 ? "Continue" : "Let’s get stronger"}
+              {step < 2 ? "Continue" : "Get started"}
               {step < 2 ? <ArrowRight size={18} /> : <Check size={18} />}
             </Button>
           </div>
         </form>
       </div>
-      <small className="onboard-footer">
-        NO ACCOUNT. NO ADS. JUST YOUR PROGRESS.
-      </small>
     </div>
   );
 }

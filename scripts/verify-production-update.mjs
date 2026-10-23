@@ -12,7 +12,8 @@ async function openEditor() {
     name: "Edit workout",
     exact: true,
   });
-  // Also works with the previous release, which opened the full editor directly.
+  // Wait for the route to settle before detecting an older full-editor release.
+  await button.or(page.locator(".live-exercise").first()).waitFor();
   if (await button.count()) await button.click();
 }
 const errors = [];
@@ -26,7 +27,9 @@ try {
   await page.getByLabel("Current weight (lb)").fill("135");
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.getByRole("button", { name: "Continue", exact: true }).click();
-  await page.getByRole("button", { name: "Let’s get stronger" }).click();
+  await page
+    .getByRole("button", { name: /^(Let’s get stronger|Get started)$/ })
+    .click();
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
   });
@@ -90,9 +93,7 @@ try {
   await page.getByRole("button", { name: "Close dialog", exact: true }).click();
   await page.getByRole("button", { name: "Finish", exact: true }).click();
   await page.getByRole("button", { name: "Save workout", exact: true }).click();
-  await page
-    .getByRole("button", { name: "Keep the rhythm", exact: true })
-    .click();
+  await page.getByRole("button", { name: /^(Keep the rhythm|Done)$/ }).click();
   await expect(
     page.getByRole("button", { name: "Update GYM", exact: true }),
   ).toBeVisible();

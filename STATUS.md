@@ -2,6 +2,16 @@
 
 This file records evidence, not assumed completion. The full acceptance contract remains in GOAL.md.
 
+## Functionality-only revision — October 22, 2026
+
+- Removed machine setup walkthroughs, technique tutorials, common-mistake sections, and the extra readiness step. Workouts open directly on the current set, with machine visuals and saved settings still available.
+- Retained explicit set/rest/next-exercise transitions, pause/resume, undo, equipment replacement, and full workout editing.
+- Replaced descriptive headings and motivational copy with plain labels across onboarding, Today, workouts, programs, machines, progress, nutrition, and settings. Optional protein references and iPhone installation help are collapsed.
+- Compact mobile spacing keeps Set complete above the bottom navigation in the tested iPhone viewport. The browser suite now asserts this placement.
+- Existing setup-stage sessions resolve to their saved set without modifying logged data or the backup schema. All 33 unit tests and the production type/build checks passed.
+- All 27 browser tests passed locally across desktop Chromium, iPhone-sized Chromium, and iPhone-sized WebKit (1.9 minutes), including direct set entry, uninterrupted set/rest transitions, machine settings, replacement, offline resume, backups, both themes, cross-tab state, and accessibility scans. Visual inspection covered the simplified Today and workout screens on desktop and iPhone layouts.
+- Updated the manual production-update script to wait for route rendering before selecting the full editor, and to accept both old and new button labels.
+
 ## Simplicity revision — October 22, 2026
 
 - Added a default guided workout with machine/setup cues, one-set logging, a dedicated rest screen, explicit continuation, undo, and a final review. Existing full editing remains accessible through Edit workout.

@@ -14,11 +14,26 @@ const workout = () => {
   return startWorkout(s, s.programs[0]);
 };
 describe("guided workout", () => {
+  it("resumes an older setup-stage backup directly at the saved set without changing its data", () => {
+    const w = workout();
+    const e = w.entries[1];
+    e.setup.seat = "4";
+    e.sets[0].done = true;
+    e.sets[1].kg = 20;
+    w.guide = { entryId: e.id, stage: "setup" };
+    const before = structuredClone(w);
+    expect(guidePosition(w)).toMatchObject({
+      stage: "train",
+      entry: { id: e.id },
+      set: { id: e.sets[1].id, kg: 20 },
+    });
+    expect(w).toEqual(before);
+  });
   it("opens existing workouts without guide data at their first unfinished exercise", () => {
     const w = workout();
     w.entries[0].sets.forEach((s) => (s.done = true));
     expect(guidePosition(w).entry?.id).toBe(w.entries[1].id);
-    expect(guidePosition(w).stage).toBe("setup");
+    expect(guidePosition(w).stage).toBe("train");
   });
   it("completes only the selected set and carries the chosen load forward", () => {
     const w = workout(),
@@ -32,7 +47,7 @@ describe("guided workout", () => {
     completeGuidedSet(w, e.id, e.sets[1].id, 11000);
     expect(e.sets[1].done).toBe(false);
   });
-  it("returns to the next set, then the next machine setup, only after rest is ended", () => {
+  it("returns to the next set, then the next machine, only after rest is ended", () => {
     const w = workout(),
       e = w.entries[0];
     completeGuidedSet(w, e.id, e.sets[0].id, 1000);
@@ -45,7 +60,7 @@ describe("guided workout", () => {
     expect(guidePosition(w).entry?.id).toBe(e.id);
     continueGuide(w);
     expect(guidePosition(w)).toMatchObject({
-      stage: "setup",
+      stage: "train",
       entry: { id: w.entries[1].id },
     });
   });
