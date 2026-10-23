@@ -2,13 +2,10 @@ import { useEffect, useState } from "react";
 import {
   Check,
   Plus,
-  Pause,
-  Play,
   Timer,
   ArrowUp,
   ArrowDown,
   Trash2,
-  Settings2,
   RefreshCw,
   BookOpen,
   Flag,
@@ -36,9 +33,9 @@ import {
   records,
 } from "./logic";
 import { Button, Card, Field, Heading, Modal, Stat, Empty } from "./ui";
-import { SetupFields } from "./Machines";
 import { ExerciseDetail } from "./Programs";
 import { GuidedWorkout } from "./GuidedWorkout";
+import { WorkoutHeader } from "./WorkoutHeader";
 const clock = (ms: number) => {
   const s = Math.max(0, Math.floor(ms / 1000));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -131,7 +128,6 @@ export function Workout({
   const w = s.active;
   const [now, setNow] = useState(Date.now()),
     [editing, setEditing] = useState(false),
-    [setup, setSetup] = useState<string | null>(null),
     [replacement, setReplacement] = useState<string | null>(null),
     [replaceMachine, setReplaceMachine] = useState(""),
     [replaceExercise, setReplaceExercise] = useState(""),
@@ -177,7 +173,6 @@ export function Workout({
       0,
     ),
     total = w.entries.reduce((n, e) => n + e.sets.length, 0),
-    setupEntry = w.entries.find((e) => e.id === setup),
     restRemaining = (w.restUntil ?? 0) - now;
   const replace = async () => {
     const original = w.entries.find((e) => e.id === replacement);
@@ -214,45 +209,37 @@ export function Workout({
     <>
       {editing ? (
         <>
-          <Button
-            variant="ghost guide-back"
-            onClick={() => {
-              setEditing(false);
-              window.scrollTo(0, 0);
-            }}
-          >
-            Back to workout
-          </Button>
-          <Heading
-            title={w.name}
-            subtitle={`${clock(duration(w, now))} active · ${done} of ${total} sets complete`}
-            action={
-              <div className="row">
-                <Button
-                  variant="secondary"
-                  aria-label={w.pausedAt ? "Resume workout" : "Pause workout"}
-                  onClick={() =>
-                    mutate((w) => {
-                      if (w.pausedAt) {
-                        w.pausedMs += Date.now() - w.pausedAt;
-                        w.pausedAt = null;
-                      } else {
-                        w.pausedAt = Date.now();
-                        w.restUntil = null;
-                      }
-                    })
-                  }
-                >
-                  {w.pausedAt ? <Play size={18} /> : <Pause size={18} />}
-                  <span>{w.pausedAt ? "Resume" : "Pause"}</span>
-                </Button>
-                <Button variant="primary" onClick={() => setConfirm("finish")}>
-                  <Flag size={18} />
-                  Finish
-                </Button>
-              </div>
+          <WorkoutHeader
+            name={w.name}
+            done={done}
+            total={total}
+            paused={w.pausedAt !== null}
+            onPause={() =>
+              mutate((w) => {
+                if (w.pausedAt !== null) {
+                  w.pausedMs += Date.now() - w.pausedAt;
+                  w.pausedAt = null;
+                } else {
+                  w.pausedAt = Date.now();
+                  w.restUntil = null;
+                }
+              })
             }
           />
+          <div className="row workout-editor-actions">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setEditing(false);
+                window.scrollTo(0, 0);
+              }}
+            >
+              Back to workout
+            </Button>
+            <Button variant="primary" onClick={() => setConfirm("finish")}>
+              <Flag size={18} /> Finish
+            </Button>
+          </div>
           <div className="session-progress">
             <span style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
           </div>
@@ -311,13 +298,6 @@ export function Workout({
                       <span className="muscle-tag">
                         {e.min}–{e.max} reps · {e.rest}s rest
                       </span>
-                      <button
-                        className="text-button"
-                        onClick={() => setSetup(e.id)}
-                      >
-                        <Settings2 size={14} />
-                        Machine setup
-                      </button>
                       <button
                         className="text-button"
                         onClick={() => {
@@ -712,7 +692,6 @@ export function Workout({
             setEditing(true);
             window.scrollTo(0, 0);
           }}
-          onSetup={setSetup}
           onReplace={(id) => {
             const e = w.entries.find((e) => e.id === id)!;
             setReplacement(id);
@@ -721,23 +700,6 @@ export function Workout({
           }}
           onFinish={() => setConfirm("finish")}
           onDiscard={() => setConfirm("discard")}
-        />
-      )}
-      {setupEntry && (
-        <SetupModal
-          entry={setupEntry}
-          onClose={() => setSetup(null)}
-          onSave={async (value) => {
-            await change((s) => {
-              const e = s.active?.entries.find((e) => e.id === setupEntry.id);
-              if (e) {
-                e.setup = value;
-                const m = s.machines.find((m) => m.id === e.machineId);
-                if (m) m.setup = value;
-              }
-            });
-            setSetup(null);
-          }}
         />
       )}
       {exercise && (
@@ -866,29 +828,5 @@ export function Workout({
         </Modal>
       )}
     </>
-  );
-}
-function SetupModal({
-  entry,
-  onClose,
-  onSave,
-}: {
-  entry: Entry;
-  onClose: () => void;
-  onSave: (setup: Entry["setup"]) => Promise<void>;
-}) {
-  const [value, setValue] = useState(entry.setup);
-  return (
-    <Modal title={`${entry.machineName} · setup`} onClose={onClose}>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          void onSave(value);
-        }}
-      >
-        <SetupFields value={value} onChange={setValue} />
-        <Button variant="primary">Save setup</Button>
-      </form>
-    </Modal>
   );
 }

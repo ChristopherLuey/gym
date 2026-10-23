@@ -1,14 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  ArrowRight,
-  Check,
-  List,
-  Pause,
-  Play,
-  RefreshCw,
-  Settings2,
-  Undo2,
-} from "lucide-react";
+import { ArrowRight, Check, Pause, Play, RefreshCw, Undo2 } from "lucide-react";
 import { type State, type Workout, fromKg, toKg } from "./model";
 import { change } from "./db";
 import {
@@ -18,13 +9,13 @@ import {
   undoGuidedSet,
 } from "./guide";
 import { MachineVisual } from "./MachineVisual";
+import { WorkoutHeader } from "./WorkoutHeader";
 import { Button, Field, Modal } from "./ui";
 
 export function GuidedWorkout({
   state: s,
   now,
   onEdit,
-  onSetup,
   onReplace,
   onFinish,
   onDiscard,
@@ -32,7 +23,6 @@ export function GuidedWorkout({
   state: State;
   now: number;
   onEdit: () => void;
-  onSetup: (id: string) => void;
   onReplace: (id: string) => void;
   onFinish: () => void;
   onDiscard: () => void;
@@ -89,37 +79,25 @@ export function GuidedWorkout({
   };
   return (
     <div className="guided-workout">
-      <header className="guide-header">
-        <div>
-          <h1>{w.name}</h1>
-        </div>
-        <Button
-          variant="icon secondary"
-          disabled={busy}
-          aria-label={paused ? "Resume workout" : "Pause workout"}
-          onClick={() =>
-            void act((w) => {
-              if (w.pausedAt !== null) {
-                w.pausedMs += Date.now() - w.pausedAt;
-                w.pausedAt = null;
-              } else {
-                w.pausedAt = Date.now();
-                w.restUntil = null;
-              }
-            })
-          }
-        >
-          {paused ? <Play size={18} /> : <Pause size={18} />}
-        </Button>
-      </header>
-      <div className="guide-progress-label">
-        <span>
-          {done} of {total} sets complete
-        </span>
-        <button className="text-button" onClick={() => setPlan(true)}>
-          <List size={16} /> Workout plan
-        </button>
-      </div>
+      <WorkoutHeader
+        name={w.name}
+        done={done}
+        total={total}
+        paused={paused}
+        busy={busy}
+        onPlan={() => setPlan(true)}
+        onPause={() =>
+          void act((w) => {
+            if (w.pausedAt !== null) {
+              w.pausedMs += Date.now() - w.pausedAt;
+              w.pausedAt = null;
+            } else {
+              w.pausedAt = Date.now();
+              w.restUntil = null;
+            }
+          })
+        }
+      />
       <div
         className="session-progress"
         role="progressbar"
@@ -254,9 +232,6 @@ export function GuidedWorkout({
             <div className="guide-visual">
               <MachineVisual machine={machine} />
               <div className="guide-secondary-actions">
-                <Button variant="ghost" onClick={() => onSetup(entry.id)}>
-                  <Settings2 size={16} /> Machine setup
-                </Button>
                 <Button variant="ghost" onClick={() => onReplace(entry.id)}>
                   <RefreshCw size={16} />{" "}
                   {machine ? "Machine occupied?" : "Choose equipment"}

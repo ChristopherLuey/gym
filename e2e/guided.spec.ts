@@ -1,12 +1,29 @@
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-async function begin(page: Page) {
+async function begin(page: Page, savedSetup = false) {
   await page.clock.setFixedTime(new Date("2026-10-19T19:00:00Z"));
   await page.goto("./");
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.getByRole("button", { name: "Get started" }).click();
+  if (savedSetup) {
+    await page
+      .getByRole("navigation")
+      .getByRole("link", { name: "Machines", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Edit Incline chest press", exact: true })
+      .click();
+    await page.getByLabel("Seat position").fill("4");
+    await page
+      .getByRole("button", { name: "Save machine", exact: true })
+      .click();
+    await page
+      .getByRole("navigation")
+      .getByRole("link", { name: "Today", exact: true })
+      .click();
+  }
   await page
     .getByRole("button", { name: "Start workout", exact: true })
     .click();
@@ -20,7 +37,7 @@ test("guided session walks through every set and machine, survives offline rest 
   page.on("console", (m) => {
     if (m.type() === "error") errors.push(m.text());
   });
-  await begin(page);
+  await begin(page, true);
   await expect(page.locator(".live-exercise")).toHaveCount(0);
   await expect(page.getByLabel("Set weight", { exact: true })).toBeVisible();
   const complete = await page
@@ -40,16 +57,6 @@ test("guided session walks through every set and machine, survives offline rest 
       name: "Incline chest press equipment illustration",
     }),
   ).toBeVisible();
-  await page
-    .getByRole("button", { name: "Machine setup", exact: true })
-    .click();
-  await page.getByLabel("Seat position").fill("4");
-  await page.getByRole("button", { name: "Save setup" }).click();
-  await page
-    .getByRole("button", { name: "Machine setup", exact: true })
-    .click();
-  await expect(page.getByLabel("Seat position")).toHaveValue("4");
-  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
   await page.screenshot({
     path: "test-results/" + info.project.name + "-direct-set.png",
     fullPage: true,
@@ -69,16 +76,16 @@ test("guided session walks through every set and machine, survives offline rest 
     fullPage: true,
   });
   await page.getByRole("button", { name: "Set complete", exact: true }).click();
-  await expect(
-    page.getByText("1 of 12 sets complete", { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByLabel("Sets complete", { exact: true })).toHaveText(
+    "1/12",
+  );
   await page.getByRole("button", { name: "Undo last set" }).click();
   await expect(page.getByLabel("Set weight", { exact: true })).toHaveValue(
     "50",
   );
-  await expect(
-    page.getByText("0 of 12 sets complete", { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByLabel("Sets complete", { exact: true })).toHaveText(
+    "0/12",
+  );
   await page.getByRole("button", { name: "Set complete", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Rest" })).toBeVisible();
   await page.evaluate(async () => {
@@ -136,9 +143,9 @@ test("guided session walks through every set and machine, survives offline rest 
   await expect(
     page.getByRole("heading", { name: "All sets complete" }),
   ).toBeVisible();
-  await expect(
-    page.getByText("12 of 12 sets complete", { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByLabel("Sets complete", { exact: true })).toHaveText(
+    "12/12",
+  );
   await page
     .getByRole("button", { name: "Finish workout", exact: true })
     .click();

@@ -111,6 +111,14 @@ test("onboarding, full workout lifecycle, setup, replacement, history and offlin
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await onboard(page);
+  await nav(page, "Machines");
+  await page
+    .getByRole("button", { name: "Edit Incline chest press", exact: true })
+    .click();
+  await page.getByLabel("Seat position").fill("4");
+  await page.getByLabel("Handle selection").fill("Neutral");
+  await page.getByRole("button", { name: "Save machine", exact: true }).click();
+  await nav(page, "Today");
   await page.screenshot({
     path: `test-results/${info.project.name}-today.png`,
     fullPage: true,
@@ -142,12 +150,6 @@ test("onboarding, full workout lifecycle, setup, replacement, history and offlin
   await card.getByLabel(`${ex} set 1 weight`, { exact: true }).fill("50");
   await card.getByLabel(`${ex} set 1 reps`, { exact: true }).fill("12");
   await card.getByLabel(`${ex} set 1 RIR`, { exact: true }).fill("2");
-  await card
-    .getByRole("button", { name: "Machine setup", exact: true })
-    .click();
-  await page.getByLabel("Seat position").fill("4");
-  await page.getByLabel("Handle selection").fill("Neutral");
-  await page.getByRole("button", { name: "Save setup" }).click();
   await card
     .getByRole("button", { name: `Complete ${ex} set 1`, exact: true })
     .click();

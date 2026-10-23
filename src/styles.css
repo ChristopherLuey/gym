@@ -2680,29 +2680,63 @@ details > p {
   max-width: 960px;
   margin: 0 auto;
 }
-.guide-header {
+.workout-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 0;
+  gap: 8px;
+  min-height: 48px;
+  margin-bottom: 8px;
 }
-.guide-header h1 {
-  font-size: 20px;
+.workout-header h1 {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 18px;
   margin: 0;
   letter-spacing: -0.4px;
 }
-.guide-header .eyebrow {
-  font-size: 10px;
-}
-.guide-progress-label {
+.workout-brand {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  min-height: 44px;
+  font-size: 20px;
+  font-weight: 850;
+  letter-spacing: -1px;
+}
+.workout-brand span {
+  color: var(--accent);
+}
+.workout-header output {
   font-size: 12px;
   color: var(--muted);
-  margin-bottom: 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.workout-header .button {
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  flex-shrink: 0;
+}
+.workout-view .session-progress {
+  margin: 0 0 12px;
+}
+.workout-editor-actions {
+  margin-bottom: 12px;
+}
+.workout-view main {
+  padding-top: calc(4px + env(safe-area-inset-top));
+}
+@media (max-width: 700px) {
+  .workout-header {
+    gap: 4px;
+  }
+  .workout-header h1 {
+    font-size: 16px;
+    margin-left: 6px;
+  }
 }
 .guide-card {
   border: 1px solid var(--border);
@@ -3145,10 +3179,6 @@ details > p {
   .machine-filters select {
     width: 100%;
   }
-  .guide-header .eyebrow {
-    font-size: 8px;
-    letter-spacing: 1px;
-  }
   .guide-card {
     padding: 14px;
     border-radius: 14px;
@@ -3275,9 +3305,6 @@ details > p {
   margin-bottom: 0;
 }
 @media (max-width: 700px) {
-  .guide-header .eyebrow {
-    display: none;
-  }
   .guided-workout .session-progress {
     margin-bottom: 12px;
   }
@@ -3285,9 +3312,6 @@ details > p {
     font-size: 20px;
     margin: 8px 0 4px;
     letter-spacing: -0.4px;
-  }
-  main:has(.guided-workout) {
-    padding-top: 8px;
   }
   .guide-training {
     padding: 14px;
@@ -3347,8 +3371,5 @@ details > p {
     grid-row: 4;
     margin-top: 12px;
     min-height: 48px;
-  }
-  .guide-header .button {
-    flex-shrink: 0;
   }
 }

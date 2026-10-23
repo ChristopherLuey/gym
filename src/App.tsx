@@ -117,7 +117,7 @@ export default function App() {
     );
   if (!s.profile.onboarded && !error) return <Onboarding state={s} />;
   return (
-    <div className="app-shell">
+    <div className={"app-shell" + (page === "Workout" ? " workout-view" : "")}>
       <a
         className="skip-link"
         href="#main"
@@ -172,17 +172,19 @@ export default function App() {
           </button>
         </nav>
         <div className="sidebar-bottom">
-          <a
-            href="#Settings"
-            className={`settings-link ${page === "Settings" ? "active" : ""}`}
-            onClick={(e) => {
-              e.preventDefault();
-              navigate("Settings");
-            }}
-          >
-            <SettingsIcon size={19} />
-            Settings
-          </a>
+          {page !== "Workout" && (
+            <a
+              href="#Settings"
+              className={`settings-link ${page === "Settings" ? "active" : ""}`}
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("Settings");
+              }}
+            >
+              <SettingsIcon size={19} />
+              Settings
+            </a>
+          )}
           <div className="profile-chip">
             <div>{(s.profile.name || "Y").slice(0, 1).toUpperCase()}</div>
             <span>{s.profile.name || "Your profile"}</span>
@@ -190,35 +192,37 @@ export default function App() {
         </div>
       </aside>
       <div className="main-shell">
-        <header className="topbar">
-          <a href="#Today" className="mobile-brand">
-            GYM<span>.</span>
-          </a>
-          <span className="breadcrumb">
-            GYM <span>/</span> {page.toUpperCase()}
-          </span>
-          <div className="row">
-            <span className="save-status">
-              {online ? <CheckCircle2 size={14} /> : <WifiOff size={14} />}{" "}
-              {error
-                ? "Save needs attention"
-                : saving
-                  ? "Saving…"
-                  : !online
-                    ? "Offline"
-                    : offlineReady
-                      ? "Offline ready"
-                      : "Saved on device"}
+        {page !== "Workout" && (
+          <header className="topbar">
+            <a href="#Today" className="mobile-brand">
+              GYM<span>.</span>
+            </a>
+            <span className="breadcrumb">
+              GYM <span>/</span> {page.toUpperCase()}
             </span>
-            <button
-              className="mobile-settings"
-              aria-label="Settings"
-              onClick={() => navigate("Settings")}
-            >
-              <SettingsIcon size={21} />
-            </button>
-          </div>
-        </header>
+            <div className="row">
+              <span className="save-status">
+                {online ? <CheckCircle2 size={14} /> : <WifiOff size={14} />}{" "}
+                {error
+                  ? "Save needs attention"
+                  : saving
+                    ? "Saving…"
+                    : !online
+                      ? "Offline"
+                      : offlineReady
+                        ? "Offline ready"
+                        : "Saved on device"}
+              </span>
+              <button
+                className="mobile-settings"
+                aria-label="Settings"
+                onClick={() => navigate("Settings")}
+              >
+                <SettingsIcon size={21} />
+              </button>
+            </div>
+          </header>
+        )}
         <main id="main" tabIndex={-1}>
           {error && (
             <div className="storage-error" role="alert">
