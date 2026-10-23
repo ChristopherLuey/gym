@@ -7,6 +7,15 @@ const base =
 const browser = await chromium.launch();
 const context = await browser.newContext({ ...devices["iPhone 13"] });
 const page = await context.newPage();
+async function openMachineEditor() {
+  await page
+    .getByRole("navigation")
+    .getByRole("link", { name: "Machines", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Edit Incline chest press", exact: true })
+    .click();
+}
 async function openEditor() {
   const button = page.getByRole("button", {
     name: "Edit workout",
@@ -34,6 +43,13 @@ try {
     await navigator.serviceWorker.ready;
   });
   await page.reload();
+  await openMachineEditor();
+  await page.getByLabel("Seat position").fill("4");
+  await page.getByRole("button", { name: "Save machine", exact: true }).click();
+  await page
+    .getByRole("navigation")
+    .getByRole("link", { name: "Today", exact: true })
+    .click();
   await page
     .getByRole("button", { name: "Start workout", exact: true })
     .click();
@@ -44,11 +60,6 @@ try {
   let card = page.locator(".live-exercise").first();
   const exercise = await card.locator("h2").innerText();
   await card.getByLabel(`${exercise} set 1 weight`, { exact: true }).fill("50");
-  await card
-    .getByRole("button", { name: "Machine setup", exact: true })
-    .click();
-  await page.getByLabel("Seat position").fill("4");
-  await page.getByRole("button", { name: "Save setup", exact: true }).click();
   await card
     .getByRole("button", { name: `Complete ${exercise} set 1`, exact: true })
     .click();
@@ -86,13 +97,11 @@ try {
       exact: true,
     }),
   ).toHaveAttribute("aria-pressed", "true");
-  await card
-    .getByRole("button", { name: "Machine setup", exact: true })
-    .click();
-  await expect(page.getByLabel("Seat position")).toHaveValue("4");
-  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
   await page.getByRole("button", { name: "Finish", exact: true }).click();
   await page.getByRole("button", { name: "Save workout", exact: true }).click();
+  await expect(
+    page.getByText("Setup: seat: 4", { exact: false }),
+  ).toBeVisible();
   await page.getByRole("button", { name: /^(Keep the rhythm|Done)$/ }).click();
   await expect(
     page.getByRole("button", { name: "Update GYM", exact: true }),
@@ -133,11 +142,14 @@ try {
   await expect(
     card.getByLabel(`${exercise} set 1 weight`, { exact: true }),
   ).toHaveValue("50");
-  await card
-    .getByRole("button", { name: "Machine setup", exact: true })
-    .click();
+  await openMachineEditor();
   await expect(page.getByLabel("Seat position")).toHaveValue("4");
   await page.getByRole("button", { name: "Close dialog", exact: true }).click();
+  await page
+    .getByRole("navigation")
+    .getByRole("link", { name: "Workout", exact: true })
+    .click();
+  await openEditor();
   await card
     .getByRole("button", { name: `Complete ${exercise} set 1`, exact: true })
     .click();
