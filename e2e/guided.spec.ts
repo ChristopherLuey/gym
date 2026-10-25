@@ -1,29 +1,12 @@
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-async function begin(page: Page, savedSetup = false) {
+async function begin(page: Page) {
   await page.clock.setFixedTime(new Date("2026-10-19T19:00:00Z"));
   await page.goto("./");
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.getByRole("button", { name: "Get started" }).click();
-  if (savedSetup) {
-    await page
-      .getByRole("navigation")
-      .getByRole("link", { name: "Machines", exact: true })
-      .click();
-    await page
-      .getByRole("button", { name: "Edit Bench & barbell", exact: true })
-      .click();
-    await page.getByLabel("Seat position").fill("4");
-    await page
-      .getByRole("button", { name: "Save machine", exact: true })
-      .click();
-    await page
-      .getByRole("navigation")
-      .getByRole("link", { name: "Today", exact: true })
-      .click();
-  }
   await page
     .getByRole("button", { name: "Start workout", exact: true })
     .click();
@@ -37,7 +20,7 @@ test("guided session walks through every set and machine, survives offline rest 
   page.on("console", (m) => {
     if (m.type() === "error") errors.push(m.text());
   });
-  await begin(page, true);
+  await begin(page);
   await expect(page.locator(".live-exercise")).toHaveCount(0);
   await expect(page.getByLabel("Set weight", { exact: true })).toBeVisible();
   const complete = await page
@@ -159,9 +142,6 @@ test("guided session walks through every set and machine, survives offline rest 
   await page.getByRole("button", { name: "Save workout", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Workout saved" }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Setup: seat: 4", { exact: false }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Done" }).click();
   await context.setOffline(false);

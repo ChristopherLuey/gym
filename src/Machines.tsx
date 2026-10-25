@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Search, Star, Settings2, Archive, Check } from "lucide-react";
+import { Plus, Search, Star, Archive, Check } from "lucide-react";
 import {
   type State,
   type Machine,
@@ -54,33 +54,27 @@ export function SetupFields({
     </div>
   );
 }
-export function MachineEditor({
+function AddMachine({
   state: s,
-  machine,
   onClose,
 }: {
   state: State;
-  machine: Machine | null;
   onClose: () => void;
 }) {
-  const [m, setM] = useState<Machine>(
-    machine
-      ? structuredClone(machine)
-      : {
-          id: uid(),
-          name: "",
-          area: "",
-          type: "Machine",
-          muscles: ["Upper chest"],
-          brand: "",
-          model: "",
-          setup: emptySetup(),
-          favorite: false,
-          archived: false,
-          photo: "",
-          incrementKg: 2.5,
-        },
-  );
+  const [m, setM] = useState<Machine>(() => ({
+    id: uid(),
+    name: "",
+    area: "",
+    type: "Machine",
+    muscles: ["Upper chest"],
+    brand: "",
+    model: "",
+    setup: emptySetup(),
+    favorite: false,
+    archived: false,
+    photo: "",
+    incrementKg: 2.5,
+  }));
   const [err, setErr] = useState(""),
     [busy, setBusy] = useState(false);
   const patch = (v: Partial<Machine>) => setM({ ...m, ...v });
@@ -97,16 +91,14 @@ export function MachineEditor({
     reader.readAsDataURL(file);
   };
   return (
-    <Modal title={machine ? "Edit machine" : "Add a machine"} onClose={onClose}>
+    <Modal title="Add a machine" onClose={onClose}>
       <form
         onSubmit={async (e) => {
           e.preventDefault();
           setBusy(true);
           try {
             await change((s) => {
-              const index = s.machines.findIndex((x) => x.id === m.id);
-              if (index < 0) s.machines.push(m);
-              else s.machines[index] = m;
+              s.machines.push(m);
             });
             onClose();
           } catch {
@@ -243,7 +235,7 @@ export function Machines({
     [filter, setFilter] = useState("All"),
     [area, setArea] = useState("All areas"),
     [filters, setFilters] = useState(false),
-    [editor, setEditor] = useState<Machine | null | undefined>(),
+    [adding, setAdding] = useState(false),
     [detail, setDetail] = useState<string | null>(initialSelection ?? null);
   useEffect(() => setDetail(initialSelection ?? null), [initialSelection]);
   const next = nextProgram(s);
@@ -285,7 +277,7 @@ export function Machines({
       <Heading
         title="Machines"
         action={
-          <Button variant="primary" onClick={() => setEditor(null)}>
+          <Button variant="primary" onClick={() => setAdding(true)}>
             <Plus size={18} />
             Add machine
           </Button>
@@ -439,13 +431,6 @@ export function Machines({
                           "Ready for your plan"
                         )}
                       </span>
-                      <Button
-                        variant="icon ghost"
-                        aria-label={`Edit ${m.name}`}
-                        onClick={() => setEditor(m)}
-                      >
-                        <Settings2 size={18} />
-                      </Button>
                     </div>
                   </Card>
                 );
@@ -456,20 +441,14 @@ export function Machines({
       {!shown.length && (
         <Empty
           title="No machines found"
-          action={<Button onClick={() => setEditor(null)}>Add machine</Button>}
+          action={<Button onClick={() => setAdding(true)}>Add machine</Button>}
         />
       )}
       <div className="note">
         Different machines can have different resistance. Your loads, setup
         notes, and records stay separate for each machine.
       </div>
-      {editor !== undefined && (
-        <MachineEditor
-          state={s}
-          machine={editor}
-          onClose={() => setEditor(undefined)}
-        />
-      )}
+      {adding && <AddMachine state={s} onClose={() => setAdding(false)} />}
       {selected && stats && (
         <Modal title={selected.name} onClose={() => setDetail(null)}>
           <MachineVisual machine={selected} />
@@ -508,14 +487,6 @@ export function Machines({
             <p className="muted">No completed working sets yet.</p>
           )}
           <div className="actions">
-            <Button
-              onClick={() => {
-                setEditor(selected);
-                setDetail(null);
-              }}
-            >
-              Edit setup
-            </Button>
             <Button
               variant="ghost"
               onClick={async () => {

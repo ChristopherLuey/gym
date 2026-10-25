@@ -7,14 +7,14 @@ const base =
 const browser = await chromium.launch();
 const context = await browser.newContext({ ...devices["iPhone 13"] });
 const page = await context.newPage();
-let equipmentName = "";
-async function openMachineEditor() {
+const equipmentName = "Release check bench";
+async function openMachineDetails() {
   await page
     .getByRole("navigation")
     .getByRole("link", { name: "Machines", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "Edit " + equipmentName, exact: true })
+    .getByRole("button", { name: "View " + equipmentName, exact: true })
     .click();
 }
 async function openEditor() {
@@ -44,12 +44,29 @@ try {
     await navigator.serviceWorker.ready;
   });
   await page.reload();
-  equipmentName = await page
-    .locator(".today-first-machine > strong")
-    .innerText();
-  await openMachineEditor();
+  await page
+    .getByRole("navigation")
+    .getByRole("link", { name: "Machines", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Add machine", exact: true }).click();
+  await page.getByLabel("Machine name").fill(equipmentName);
+  await page.getByLabel("Equipment type").selectOption("Free weights");
+  await page.getByLabel("Machine illustration").selectOption("bench");
   await page.getByLabel("Seat position").fill("4");
   await page.getByRole("button", { name: "Save machine", exact: true }).click();
+  await page.getByRole("button", { name: "More", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("link", { name: /Programs/ })
+    .click();
+  await page
+    .getByRole("button", { name: "Edit Full Body A", exact: true })
+    .click();
+  await page
+    .getByLabel("Assigned machine")
+    .first()
+    .selectOption({ label: equipmentName });
+  await page.getByRole("button", { name: "Save program", exact: true }).click();
   await page
     .getByRole("navigation")
     .getByRole("link", { name: "Today", exact: true })
@@ -150,8 +167,10 @@ try {
   await expect(
     card.getByLabel(`${exercise} set 1 weight`, { exact: true }),
   ).toHaveValue("50");
-  await openMachineEditor();
-  await expect(page.getByLabel("Seat position")).toHaveValue("4");
+  await openMachineDetails();
+  await expect(
+    page.locator(".list-line").filter({ hasText: "Seat position" }),
+  ).toHaveText("Seat position4");
   await page.getByRole("button", { name: "Close dialog", exact: true }).click();
   await page
     .getByRole("navigation")

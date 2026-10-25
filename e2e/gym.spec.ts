@@ -104,21 +104,13 @@ test("onboarding units, equipment grouping, direct machine access and exercise n
     .analyze();
   expect(accessibility.violations.map((v) => v.id)).toEqual([]);
 });
-test("onboarding, full workout lifecycle, setup, replacement, history and offline", async ({
+test("onboarding, full workout lifecycle, replacement, history and offline", async ({
   page,
   context,
 }, info) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await onboard(page);
-  await nav(page, "Machines");
-  await page
-    .getByRole("button", { name: "Edit Bench & barbell", exact: true })
-    .click();
-  await page.getByLabel("Seat position").fill("4");
-  await page.getByLabel("Handle selection").fill("Neutral");
-  await page.getByRole("button", { name: "Save machine", exact: true }).click();
-  await nav(page, "Today");
   await page.screenshot({
     path: `test-results/${info.project.name}-today.png`,
     fullPage: true,
@@ -265,9 +257,6 @@ test("onboarding, full workout lifecycle, setup, replacement, history and offlin
   await expect(
     page.getByText("First recorded best", { exact: false }).first(),
   ).toBeVisible();
-  await expect(
-    page.getByText("Setup: seat: 4", { exact: false }),
-  ).toBeVisible();
   await page.getByRole("button", { name: "Done" }).click();
   await nav(page, "Progress");
   await expect(page.getByLabel("Exercise and machine")).toHaveValue(
@@ -343,15 +332,17 @@ test("skipping weight and equipment keeps onboarding usable and assignments hone
   await page.getByRole("button", { name: "Edit workout", exact: true }).click();
   await expect(page.locator(".live-exercise")).toHaveCount(6);
 });
-test("machine creation/edit, program assignment, nutrition, theme and backups", async ({
+test("machine creation, program assignment, nutrition, theme and backups", async ({
   page,
 }, info) => {
   await onboard(page);
   await nav(page, "Machines");
+  await expect(page.getByRole("button", { name: /^Edit / })).toHaveCount(0);
   await page.getByRole("button", { name: "Add machine", exact: true }).click();
   await page.getByLabel("Machine name").fill("Chest press near mirrors");
   await page.getByLabel("Gym area", { exact: true }).fill("Chest corner");
   await page.getByLabel("Seat position").fill("3");
+  await page.getByLabel("Pad position").fill("2");
   await page
     .getByLabel("Machine photo (optional)")
     .setInputFiles("public/icon-192.png");
@@ -363,10 +354,16 @@ test("machine creation/edit, program assignment, nutrition, theme and backups", 
     page.getByRole("heading", { name: "Chest press near mirrors" }),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "Edit Chest press near mirrors", exact: true })
+    .getByRole("button", { name: "View Chest press near mirrors", exact: true })
     .click();
-  await page.getByLabel("Pad position").fill("2");
-  await page.getByRole("button", { name: "Save machine", exact: true }).click();
+  await expect(page.getByRole("button", { name: /^Edit / })).toHaveCount(0);
+  await expect(
+    page.locator(".list-line").filter({ hasText: "Seat position" }),
+  ).toHaveText("Seat position3");
+  await expect(
+    page.locator(".list-line").filter({ hasText: "Pad position" }),
+  ).toHaveText("Pad position2");
+  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
   await page
     .getByRole("button", {
       name: "Favorite Chest press near mirrors",
@@ -403,6 +400,9 @@ test("machine creation/edit, program assignment, nutrition, theme and backups", 
   await page.getByRole("button", { name: "Skip", exact: true }).click();
   await page.getByRole("button", { name: "Finish", exact: true }).click();
   await page.getByRole("button", { name: "Save workout", exact: true }).click();
+  await expect(
+    page.getByText("Setup: seat: 3 · pad: 2", { exact: false }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Done" }).click();
   await nav(page, "Nutrition");
   await page.getByLabel("Weight today (lb)").fill("136");
