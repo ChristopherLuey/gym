@@ -270,16 +270,25 @@ test("onboarding, full workout lifecycle, setup, replacement, history and offlin
   ).toBeVisible();
   await page.getByRole("button", { name: "Done" }).click();
   await nav(page, "Progress");
-  await page.getByLabel("Machine", { exact: true }).selectOption("m-bench");
+  await expect(page.getByLabel("Exercise and machine")).toHaveValue(
+    JSON.stringify(["bench", "m-bench"]),
+  );
   await expect(
     page.getByRole("img", { name: /Heaviest working set/ }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Bodyweight", exact: true }).click();
+  await expect(
+    page.getByRole("img", { name: /Bodyweight \(lb\)/ }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Strength", exact: true }).click();
+  await page.locator(".progress-details > summary").click();
   await page
     .getByRole("button", { name: "Machine usage", exact: true })
     .click();
   await expect(
     page.getByRole("heading", { name: "Most-used machines" }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Back to overview" }).click();
   await page.getByRole("button", { name: "History", exact: true }).click();
   await expect(page.locator(".history-card")).toHaveCount(1);
   await page.evaluate(async () => {
@@ -420,6 +429,7 @@ test("machine creation/edit, program assignment, nutrition, theme and backups", 
     .getByRole("button", { name: "Enable simple food tracking", exact: true })
     .click();
   await nav(page, "Progress");
+  await page.locator(".progress-details > summary").click();
   await page
     .getByRole("button", { name: "+ Add measurement", exact: true })
     .click();

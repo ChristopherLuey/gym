@@ -3349,6 +3349,212 @@ details > p {
 .simple-today .page-heading .eyebrow {
   margin: 0;
 }
+
+/* Progress keeps the main view to one chart and a short workout list. */
+.simple-progress {
+  max-width: 900px;
+  margin: 0 auto;
+}
+.simple-progress .page-heading {
+  flex-direction: row;
+  align-items: center;
+}
+.progress-range {
+  width: 120px;
+  min-height: 44px;
+  flex-shrink: 0;
+}
+.progress-range,
+.progress-main-chart > select {
+  appearance: none;
+  height: 44px;
+  padding: 8px 32px 8px 12px;
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position:
+    right 18px center,
+    right 13px center;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+.progress-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 14px 0;
+}
+.progress-summary .stat {
+  text-align: center;
+  padding: 0 8px;
+}
+.progress-summary .stat + .stat {
+  border-left: 1px solid var(--border);
+}
+.progress-summary .stat > span {
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.progress-summary .stat > strong {
+  font-size: 24px;
+  margin: 5px 0 0;
+}
+.progress-chart-switch {
+  display: flex;
+  gap: 4px;
+  margin: -6px 0 12px;
+}
+.progress-chart-switch button {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 550;
+  min-height: 44px;
+  padding: 8px 12px;
+}
+.progress-chart-switch button[aria-pressed="true"] {
+  color: var(--text);
+  background: var(--surface2);
+}
+.progress-chart-value {
+  margin-top: 16px;
+}
+.progress-chart-value > strong {
+  font-size: 30px;
+  font-weight: 550;
+  letter-spacing: -1px;
+}
+.progress-chart-value > strong > span {
+  font-size: 13px;
+  letter-spacing: 0;
+  color: var(--muted);
+  margin-left: 6px;
+  font-weight: 400;
+}
+.progress-chart-value > small {
+  font-size: 11px;
+  margin-top: 2px;
+}
+.progress-chart-empty {
+  min-height: 130px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+.progress-workouts .section-title {
+  margin: -6px 0 0;
+}
+.progress-workout {
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 14px 0;
+  gap: 12px;
+}
+.progress-workout:last-child {
+  border-bottom: 0;
+  padding-bottom: 2px;
+}
+.progress-workout strong {
+  font-size: 13px;
+}
+.progress-workout small {
+  font-size: 11px;
+  margin-top: 4px;
+}
+.progress-workout > svg {
+  flex-shrink: 0;
+  color: var(--muted);
+}
+.progress-details {
+  border: 0;
+  margin-top: 0;
+  padding: 0;
+}
+.progress-details > summary,
+.progress-machine > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  list-style: none;
+  min-height: 44px;
+  font-size: 13px;
+}
+.progress-details > summary {
+  justify-content: space-between;
+  padding: 10px 4px;
+}
+.progress-details > summary::-webkit-details-marker,
+.progress-machine > summary::-webkit-details-marker {
+  display: none;
+}
+.progress-details[open] > summary > svg,
+.progress-machine[open] > summary > svg {
+  transform: rotate(180deg);
+}
+.progress-details > div {
+  padding-top: 8px;
+}
+.progress-detail-link {
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 14px 18px;
+  background: var(--surface);
+  border-color: var(--border);
+  border-radius: 14px;
+}
+.progress-subhead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.progress-subhead h2 {
+  margin: 0;
+  font-size: 16px;
+}
+.progress-week {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+}
+.progress-week > span {
+  color: var(--muted);
+}
+.progress-machine {
+  margin-top: 0;
+  padding: 0;
+}
+.progress-machine > summary {
+  padding: 10px 0;
+  color: var(--text);
+}
+.progress-machine > summary > div:not(.machine-visual) {
+  flex: 1;
+  min-width: 0;
+}
+.progress-machine > summary > svg {
+  flex-shrink: 0;
+  color: var(--muted);
+}
+.progress-machine > summary small {
+  font-size: 10px;
+  margin-top: 4px;
+}
+.progress-machine .compact-visual {
+  width: 60px;
+  height: 48px;
+  flex-shrink: 0;
+}
 @media (max-width: 700px) {
   .today-start-copy > .pill {
     grid-column: 1;

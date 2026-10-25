@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   AreaChart,
   Area,
@@ -10,29 +10,26 @@ import {
   BarChart,
   Bar,
 } from "recharts";
-import { TrendingUp, Trophy, ArrowUpRight } from "lucide-react";
+import {
+  TrendingUp,
+  Trophy,
+  ArrowUpRight,
+  ArrowLeft,
+  ChevronDown,
+} from "lucide-react";
 import { type State, fromKg, formatDate, localDay, uid } from "./model";
 import {
   volume,
   setCount,
   machineStats,
   working,
-  weekHistory,
   records,
   plannedCompletion,
   trainingFrequency,
 } from "./logic";
 import { change } from "./db";
-import {
-  Button,
-  Card,
-  Empty,
-  Field,
-  Heading,
-  SectionTitle,
-  Stat,
-  Modal,
-} from "./ui";
+import { MachineVisual } from "./MachineVisual";
+import { Button, Card, Field, Heading, SectionTitle, Stat, Modal } from "./ui";
 type Point = { label: string; value: number };
 function Chart({
   data,
@@ -43,13 +40,14 @@ function Chart({
   label: string;
   bar?: boolean;
 }) {
+  const fillId = useId();
   return data.length ? (
     <div
       className="chart"
       role="img"
       aria-label={`${label}. ${data.map((p) => `${p.label}: ${Math.round(p.value * 10) / 10}`).join("; ")}`}
     >
-      <ResponsiveContainer width="100%" height={235}>
+      <ResponsiveContainer width="100%" height={210}>
         {bar ? (
           <BarChart
             data={data}
@@ -76,6 +74,7 @@ function Chart({
               }}
             />
             <Bar
+              isAnimationActive={false}
               dataKey="value"
               name={label}
               fill="var(--accent)"
@@ -88,7 +87,7 @@ function Chart({
             margin={{ top: 10, right: 10, left: -24, bottom: 5 }}
           >
             <defs>
-              <linearGradient id="chart-fill" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.3} />
                 <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
               </linearGradient>
@@ -115,12 +114,13 @@ function Chart({
               }}
             />
             <Area
+              isAnimationActive={false}
               type="monotone"
               dataKey="value"
               name={label}
               stroke="var(--accent)"
               strokeWidth={2.5}
-              fill="url(#chart-fill)"
+              fill={`url(#${fillId})`}
               dot={{ r: 3, fill: "var(--accent)" }}
             />
           </AreaChart>
@@ -128,7 +128,10 @@ function Chart({
       </ResponsiveContainer>
     </div>
   ) : (
-    <Empty title="No data yet" />
+    <div className="progress-chart-empty">
+      <TrendingUp size={24} aria-hidden="true" />
+      <span>No data yet</span>
+    </div>
   );
 }
 export default function Progress({
@@ -140,14 +143,29 @@ export default function Progress({
 }) {
   const [range, setRange] = useState(30),
     [tab, setTab] = useState("Overview"),
-    [exercise, setExercise] = useState(s.exercises[0].id),
-    [machine, setMachine] = useState(""),
+    [chart, setChart] = useState("Strength"),
+    [selection, setSelection] = useState(""),
+    [detailsOpen, setDetailsOpen] = useState(false),
     [measure, setMeasure] = useState(false),
     [part, setPart] = useState("Arms"),
     [cm, setCm] = useState("");
+  const pageRef = useRef<HTMLDivElement>(null);
+  const previousTab = useRef(tab);
+  useEffect(() => {
+    if (previousTab.current === tab) return;
+    previousTab.current = tab;
+    const heading = pageRef.current?.querySelector<HTMLElement>(
+      tab === "Overview" ? ".page-heading h1" : ".progress-subhead h2",
+    );
+    if (heading) {
+      heading.tabIndex = -1;
+      heading.focus();
+    }
+  }, [tab]);
   const since = range ? Date.now() - range * 86400000 : 0;
-  const history = s.history.filter((w) => (w.finished ?? 0) >= since);
-  const weekly = weekHistory(s);
+  const history = s.history
+    .filter((w) => (w.finished ?? 0) >= since)
+    .sort((a, b) => a.finished! - b.finished!);
   const { planned: target, matched, extra } = plannedCompletion(s);
   const weightData = s.weights
     .filter((w) => new Date(w.date + "T12:00:00").getTime() >= since)
@@ -164,9 +182,45 @@ export default function Progress({
     .map((m) => ({ m, st: machineStats(s, m.id, history) }))
     .filter((x) => x.st.sessions)
     .sort((a, b) => b.st.sessions - a.st.sessions);
+  // Only offer combinations with logged sets, keeping each machine's loads separate.
+  const combinations = new Map<
+    string,
+    { exerciseId: string; machineId: string; label: string }
+  >();
+  history
+    .slice()
+    .reverse()
+    .forEach((w) =>
+      w.entries
+        .filter((e) => working(e).length)
+        .forEach((e) => {
+          const key = JSON.stringify([e.exerciseId, e.machineId]);
+          const machineName =
+            s.machines.find((m) => m.id === e.machineId)?.name ||
+            e.machineName ||
+            "Unassigned";
+          if (!combinations.has(key))
+            combinations.set(key, {
+              exerciseId: e.exerciseId,
+              machineId: e.machineId,
+              label:
+                e.exerciseName.toLowerCase() === machineName.toLowerCase()
+                  ? e.exerciseName
+                  : `${e.exerciseName} · ${machineName}`,
+            });
+        }),
+    );
+  const selectedKey = combinations.has(selection)
+    ? selection
+    : ([...combinations.keys()][0] ?? "");
+  const selected = combinations.get(selectedKey);
   const strengthData = history.flatMap((w) => {
     const sets = w.entries
-      .filter((e) => e.exerciseId === exercise && e.machineId === machine)
+      .filter(
+        (e) =>
+          e.exerciseId === selected?.exerciseId &&
+          e.machineId === selected?.machineId,
+      )
       .flatMap(working);
     return sets.length
       ? [
@@ -192,329 +246,315 @@ export default function Progress({
         .reverse(),
     [s, range],
   );
+  const chartData = chart === "Strength" ? strengthData : weightData;
+  const latest = chartData.at(-1);
+  const workoutRows = (limit?: number) =>
+    history
+      .slice()
+      .reverse()
+      .slice(0, limit)
+      .map((w) => (
+        <button
+          className="history-card progress-workout"
+          key={w.id}
+          onClick={() => showWorkout(w.id)}
+        >
+          <div>
+            <strong>{w.name}</strong>
+            <small>
+              {formatDate(w.finished!)} · {setCount(w)} sets
+            </small>
+          </div>
+          <ArrowUpRight size={18} aria-hidden="true" />
+        </button>
+      ));
   return (
-    <>
+    <div className="simple-progress" ref={pageRef}>
       <Heading
         title="Progress"
         action={
-          <div className="range-control">
+          <select
+            className="progress-range"
+            aria-label="Progress period"
+            value={range}
+            onChange={(e) => setRange(Number(e.target.value))}
+          >
             {[
               [7, "Week"],
               [30, "Month"],
               [90, "3 months"],
               [0, "All time"],
             ].map(([n, label]) => (
-              <button
-                key={n}
-                aria-pressed={range === n}
-                className={range === n ? "active" : ""}
-                onClick={() => setRange(Number(n))}
-              >
+              <option key={n} value={n}>
                 {label}
-              </button>
+              </option>
             ))}
-          </div>
+          </select>
         }
       />
-      <div className="tabs">
-        {["Overview", "Machine usage", "History"].map((t) => (
-          <button
-            key={t}
-            className={tab === t ? "active" : ""}
-            onClick={() => setTab(t)}
+      {tab !== "Overview" && (
+        <div className="progress-subhead">
+          <Button
+            variant="icon ghost"
+            aria-label="Back to overview"
+            onClick={() => setTab("Overview")}
           >
-            {t}
-          </button>
-        ))}
-      </div>
+            <ArrowLeft size={20} />
+          </Button>
+          <h2>{tab}</h2>
+        </div>
+      )}
       {tab === "Overview" && (
         <>
-          <div className="stats-grid">
-            <Card>
-              <Stat
-                label="SESSIONS"
-                value={history.length}
-                detail={`${matched} of ${target} planned this week${extra ? ` · ${extra} extra` : ""}`}
-              />
-            </Card>
-            <Card>
-              <Stat
-                label="WORKING SETS"
-                value={history.reduce((n, w) => n + setCount(w), 0)}
-                detail="Completed sets, excluding warm-ups"
-              />
-            </Card>
-            <Card>
-              <Stat
-                label={`TOTAL VOLUME · ${s.profile.units.toUpperCase()}`}
-                value={Math.round(
-                  fromKg(
-                    history.reduce((n, w) => n + volume(w), 0),
-                    s.profile.units,
-                  ),
-                ).toLocaleString()}
-                detail="Load × reps, across completed working sets"
-              />
-            </Card>
-          </div>
-          <Card className="growth-overview">
-            <TrendingUp className="accent" />
-            <div>
-              <h2>Overview</h2>
-              <p>
-                {weekly.length} sessions this week · {stats.length} machines ·{" "}
-                {pbs.filter((r) => !r.first).length} load records improved
-              </p>
-            </div>
-          </Card>
-          <div className="split-grid">
-            <Card>
-              <SectionTitle
-                title="Bodyweight"
-                extra={<span className="muted">{s.profile.units}</span>}
-              />
-              <Chart
-                data={weightData}
-                label={`Bodyweight (${s.profile.units})`}
-              />
-            </Card>
-            <Card>
-              <SectionTitle
-                title="Training volume"
-                extra={<span className="muted">{s.profile.units} × reps</span>}
-              />
-              <Chart data={volumeData} label="Working volume" bar />
-            </Card>
-          </div>
-          <Card>
-            <SectionTitle title="Weekly training frequency" />
-            <Chart
-              data={trainingFrequency(history).map((p) => ({
-                label: formatDate(p.date),
-                value: p.value,
-              }))}
-              label="Completed sessions per week"
-              bar
+          <Card className="progress-summary">
+            <Stat label="Workouts" value={history.length} />
+            <Stat
+              label="Sets"
+              value={history.reduce((n, w) => n + setCount(w), 0)}
+            />
+            <Stat
+              label="New records"
+              value={pbs.filter((r) => !r.first).length}
             />
           </Card>
-          <Card>
-            <SectionTitle title="Strength, one setup at a time" />
-            <div className="form-grid">
-              <Field label="Exercise">
-                <select
-                  value={exercise}
-                  onChange={(e) => setExercise(e.target.value)}
+          <Card className="progress-main-chart">
+            <div className="progress-chart-switch" aria-label="Chart">
+              {["Strength", "Bodyweight"].map((name) => (
+                <button
+                  key={name}
+                  aria-pressed={chart === name}
+                  onClick={() => setChart(name)}
                 >
-                  {s.exercises.map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {e.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Machine">
-                <select
-                  value={machine}
-                  onChange={(e) => setMachine(e.target.value)}
-                >
-                  <option value="">Unassigned / bodyweight</option>
-                  {s.machines.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                      {m.archived ? " (archived)" : ""}
-                    </option>
-                  ))}
-                </select>
-              </Field>
+                  {name}
+                </button>
+              ))}
             </div>
+            {chart === "Strength" && combinations.size > 0 && (
+              <select
+                aria-label="Exercise and machine"
+                value={selectedKey}
+                onChange={(e) => setSelection(e.target.value)}
+              >
+                {[...combinations].map(([key, combo]) => (
+                  <option key={key} value={key}>
+                    {combo.label}
+                  </option>
+                ))}
+              </select>
+            )}
+            {latest && (
+              <div className="progress-chart-value">
+                <strong>
+                  {latest.value}
+                  <span>{s.profile.units}</span>
+                </strong>
+                <small>
+                  {chart === "Strength" ? "Heaviest set" : "Latest weight"} ·{" "}
+                  {latest.label}
+                </small>
+              </div>
+            )}
             <Chart
-              data={strengthData}
-              label={`Heaviest working set (${s.profile.units})`}
+              data={chartData}
+              label={`${chart === "Strength" ? "Heaviest working set" : "Bodyweight"} (${s.profile.units})`}
             />
-            <p className="small muted">
-              Heaviest working load per session, for the selected exercise and
-              machine.
-            </p>
           </Card>
-          <div className="split-grid">
-            <Card>
-              <SectionTitle title="Muscle-group volume" />
-              <Chart
-                data={Object.entries(coverage).map(([label, value]) => ({
-                  label,
-                  value,
-                }))}
-                label="Direct working sets"
-                bar
-              />
-            </Card>
-            <Card>
-              <SectionTitle
-                title="Personal records"
-                extra={<Trophy size={18} className="accent" />}
-              />
-              {pbs.length ? (
-                pbs.slice(0, 8).map((r, i) => (
-                  <div className="record" key={i}>
-                    <Trophy size={16} />
-                    <div>
-                      <strong>{r.name}</strong>
-                      <small>
-                        {r.machine} · {formatDate(r.date)}
-                        {r.first ? " · First recorded best" : ""}
-                      </small>
-                    </div>
-                    <b>
-                      {fromKg(r.kg, s.profile.units)}
-                      <small>{s.profile.units}</small>
-                    </b>
-                  </div>
-                ))
-              ) : (
-                <Empty title="No records yet" />
-              )}
-            </Card>
-          </div>
-          <Card>
+          <Card className="progress-workouts">
             <SectionTitle
-              title="Body measurements"
+              title="Recent workouts"
               extra={
-                <Button variant="ghost" onClick={() => setMeasure(true)}>
-                  + Add measurement
+                <Button variant="ghost" onClick={() => setTab("History")}>
+                  History <ArrowUpRight size={16} aria-hidden="true" />
                 </Button>
               }
             />
-            {s.measurements.length ? (
-              s.measurements
-                .slice(-8)
-                .reverse()
-                .map((m) => (
-                  <div className="list-line" key={m.id}>
-                    <span>
-                      {m.part}
-                      <small>{formatDate(m.date)}</small>
-                    </span>
-                    <strong>{m.cm} cm</strong>
-                  </div>
-                ))
+            {history.length ? (
+              workoutRows(3)
             ) : (
-              <p className="muted">No measurements yet.</p>
+              <p className="muted small">No workouts yet</p>
             )}
           </Card>
+          <details
+            className="progress-details"
+            open={detailsOpen}
+            onToggle={(e) => setDetailsOpen(e.currentTarget.open)}
+          >
+            <summary>
+              Details <ChevronDown size={18} aria-hidden="true" />
+            </summary>
+            {detailsOpen && (
+              <div>
+                <Button
+                  className="progress-detail-link"
+                  variant="full"
+                  onClick={() => setTab("Machine usage")}
+                >
+                  Machine usage <ArrowUpRight size={18} aria-hidden="true" />
+                </Button>
+                <Card>
+                  <SectionTitle title="Personal records" />
+                  {pbs.length ? (
+                    pbs.slice(0, 8).map((r, i) => (
+                      <div className="record" key={i}>
+                        <Trophy size={16} />
+                        <div>
+                          <strong>{r.name}</strong>
+                          <small>
+                            {r.machine} · {formatDate(r.date)}
+                            {r.first ? " · First recorded best" : ""}
+                          </small>
+                        </div>
+                        <b>
+                          {fromKg(r.kg, s.profile.units)}
+                          <small>{s.profile.units}</small>
+                        </b>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="muted small">No records yet</p>
+                  )}
+                </Card>
+                <Card>
+                  <SectionTitle
+                    title="Body measurements"
+                    extra={
+                      <Button variant="ghost" onClick={() => setMeasure(true)}>
+                        + Add measurement
+                      </Button>
+                    }
+                  />
+                  {s.measurements.length ? (
+                    s.measurements
+                      .slice(-8)
+                      .reverse()
+                      .map((m) => (
+                        <div className="list-line" key={m.id}>
+                          <span>
+                            {m.part}
+                            <small>{formatDate(m.date)}</small>
+                          </span>
+                          <strong>{m.cm} cm</strong>
+                        </div>
+                      ))
+                  ) : (
+                    <p className="muted">No measurements yet.</p>
+                  )}
+                </Card>
+                <Card>
+                  <SectionTitle
+                    title="Training volume"
+                    extra={
+                      <span className="muted small">
+                        {s.profile.units} × reps
+                      </span>
+                    }
+                  />
+                  <Chart data={volumeData} label="Working volume" bar />
+                </Card>
+                <div className="split-grid">
+                  <Card>
+                    <SectionTitle title="Workouts per week" />
+                    <Chart
+                      data={trainingFrequency(history).map((p) => ({
+                        label: formatDate(p.date),
+                        value: p.value,
+                      }))}
+                      label="Completed sessions per week"
+                      bar
+                    />
+                  </Card>
+                  <Card>
+                    <SectionTitle title="Sets by muscle" />
+                    <Chart
+                      data={Object.entries(coverage).map(([label, value]) => ({
+                        label,
+                        value,
+                      }))}
+                      label="Direct working sets"
+                      bar
+                    />
+                  </Card>
+                </div>
+              </div>
+            )}
+          </details>
         </>
       )}
       {tab === "Machine usage" && (
         <>
-          <div className="split-grid">
-            <Card>
-              <SectionTitle title="Most-used machines" />
-              <Chart
-                data={stats
-                  .slice(0, 6)
-                  .map(({ m, st }) => ({ label: m.name, value: st.sessions }))}
-                label="Sessions"
-                bar
-              />
-            </Card>
-            <Card>
-              <SectionTitle title="Usage over time" />
-              <Chart
-                data={history.map((w) => ({
-                  label: formatDate(w.finished!),
-                  value: new Set(
-                    w.entries
-                      .filter((e) => working(e).length)
-                      .map((e) => e.machineId)
-                      .filter(Boolean),
-                  ).size,
-                }))}
-                label="Machines used"
-              />
-            </Card>
-          </div>
-          {stats.length ? (
-            stats.map(({ m, st }) => (
-              <Card key={m.id}>
-                <div className="row">
-                  <div>
-                    <h3>{m.name}</h3>
-                    <p className="muted small">
-                      {m.muscles.join(" · ")} · Last used {formatDate(st.last!)}
-                    </p>
+          <Card>
+            <SectionTitle title="Most-used machines" />
+            {stats.length ? (
+              stats.map(({ m, st }) => (
+                <details className="progress-machine" key={m.id}>
+                  <summary>
+                    <MachineVisual machine={m} compact />
+                    <div>
+                      <strong>{m.name}</strong>
+                      <small>{formatDate(st.last!)}</small>
+                    </div>
+                    <span>{st.sessions}×</span>
+                    <ChevronDown size={16} aria-hidden="true" />
+                  </summary>
+                  <div className="stats-grid compact">
+                    <Stat label="Sets" value={st.sets} />
+                    <Stat label="Reps" value={st.reps} />
+                    <Stat
+                      label={`Volume · ${s.profile.units}`}
+                      value={Math.round(
+                        fromKg(st.volume, s.profile.units),
+                      ).toLocaleString()}
+                    />
                   </div>
-                  <span className="pill">{st.sessions} sessions</span>
-                </div>
-                <div className="stats-grid compact">
-                  <Stat label="Sets" value={st.sets} />
-                  <Stat label="Reps" value={st.reps} />
-                  <Stat
-                    label={`Volume · ${s.profile.units}`}
-                    value={Math.round(
-                      fromKg(st.volume, s.profile.units),
-                    ).toLocaleString()}
-                  />
-                </div>
-                <p className="small">{st.exercises.join(" · ")}</p>
-                {pbs
-                  .filter((p) => p.machineId === m.id)
-                  .slice(0, 3)
-                  .map((p, i) => (
-                    <p className="accent small" key={i}>
-                      {p.name}: {fromKg(p.kg, s.profile.units)}{" "}
-                      {s.profile.units} load record · {formatDate(p.date)}
-                    </p>
-                  ))}
-              </Card>
-            ))
-          ) : (
-            <Empty title="No machine usage yet" />
-          )}
+                  <p className="small muted">{m.muscles.join(" · ")}</p>
+                  <p className="small">{st.exercises.join(" · ")}</p>
+                  {pbs
+                    .filter((p) => p.machineId === m.id)
+                    .slice(0, 3)
+                    .map((p, i) => (
+                      <p className="accent small" key={i}>
+                        {p.name}: {fromKg(p.kg, s.profile.units)}{" "}
+                        {s.profile.units} load record · {formatDate(p.date)}
+                      </p>
+                    ))}
+                </details>
+              ))
+            ) : (
+              <p className="muted small">No machine usage yet</p>
+            )}
+          </Card>
+          <Card>
+            <SectionTitle title="Usage over time" />
+            <Chart
+              data={history.map((w) => ({
+                label: formatDate(w.finished!),
+                value: new Set(
+                  w.entries
+                    .filter((e) => working(e).length)
+                    .map((e) => e.machineId)
+                    .filter(Boolean),
+                ).size,
+              }))}
+              label="Machines used"
+            />
+          </Card>
         </>
       )}
       {tab === "History" && (
         <>
-          <Card>
-            <SectionTitle title="This week’s review" />
-            <p>
-              {matched} of {target} planned sessions completed, plus {extra}{" "}
-              extra sessions, with {weekly.reduce((n, w) => n + setCount(w), 0)}{" "}
-              working sets.
-            </p>
-            <p className="muted small">
-              Scheduled program and day must match; other sessions count as
-              extras.
-            </p>
+          <Card className="progress-week">
+            <span>This week</span>
+            <strong>
+              {matched}/{target} planned{extra > 0 ? ` · ${extra} extra` : ""}
+            </strong>
           </Card>
-          {history.length ? (
-            history
-              .slice()
-              .reverse()
-              .map((w) => (
-                <button
-                  className="card history-card"
-                  key={w.id}
-                  onClick={() => showWorkout(w.id)}
-                >
-                  <div>
-                    <strong>{w.name}</strong>
-                    <small>
-                      {formatDate(w.finished!)} · {setCount(w)} working sets ·{" "}
-                      {
-                        new Set(
-                          w.entries
-                            .filter((e) => working(e).length)
-                            .map((e) => e.machineId),
-                        ).size
-                      }{" "}
-                      equipment setups
-                    </small>
-                  </div>
-                  <ArrowUpRight size={20} />
-                </button>
-              ))
-          ) : (
-            <Empty title="No workouts yet" />
-          )}
+          <Card className="progress-workouts">
+            {history.length ? (
+              workoutRows()
+            ) : (
+              <p className="muted small">No workouts yet</p>
+            )}
+          </Card>
         </>
       )}
       {measure && (
@@ -555,6 +595,6 @@ export default function Progress({
           </form>
         </Modal>
       )}
-    </>
+    </div>
   );
 }
