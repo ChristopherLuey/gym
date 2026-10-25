@@ -3,18 +3,13 @@ import {
   type State,
   type Program,
   formatDate,
-  fromKg,
   localDay,
   repTarget,
 } from "./model";
 import {
   nextProgram,
-  weekHistory,
-  machineStats,
   setCount,
-  records,
   plannedCompletion,
-  weightTrend,
   repeatProgram,
 } from "./logic";
 import { Card, Heading, SectionTitle, Button, Empty, ArrowLink } from "./ui";
@@ -37,10 +32,7 @@ export function Today({
   const last = [...s.history].sort(
     (a, b) => (b.finished ?? 0) - (a.finished ?? 0),
   )[0];
-  const weight = [...s.weights].sort((a, b) => b.date.localeCompare(a.date))[0];
-  const trend = weightTrend(s);
   const { planned, matched, extra } = plannedCompletion(s);
-  const weekly = weekHistory(s);
   const today = next && localDay(next.date) === localDay();
   const plan = s.active
     ? s.active.entries.map((e) => ({
@@ -64,15 +56,6 @@ export function Today({
         done: false,
       }));
   const first = plan.find((p) => !p.done) ?? plan[0];
-  const used = s.machines
-    .map((m) => ({ m, stats: machineStats(s, m.id) }))
-    .filter((x) => x.stats.last)
-    .sort((a, b) => b.stats.last! - a.stats.last!)
-    .slice(0, 3);
-  const improvements = [...s.history]
-    .sort((a, b) => (b.finished ?? 0) - (a.finished ?? 0))
-    .flatMap((w) => records(s, w).filter((r) => !r.first))
-    .slice(0, 3);
   return (
     <div className="simple-today">
       <Heading
@@ -228,82 +211,6 @@ export function Today({
           </Button>
         </Card>
       )}
-      <details className="today-details">
-        <summary>Progress & recent machines</summary>
-        <div className="simple-insights">
-          <Card>
-            <SectionTitle title="Bodyweight" />
-            <strong className="insight-value">
-              {weight
-                ? fromKg(weight.kg, s.profile.units) + " " + s.profile.units
-                : "Add your first weigh-in"}
-            </strong>
-            <p className="muted">
-              {trend.delta !== null
-                ? (trend.delta > 0 ? "+" : "") +
-                  fromKg(trend.delta, s.profile.units) +
-                  " " +
-                  s.profile.units +
-                  " · weekly average change"
-                : "No trend yet."}
-            </p>
-            <ArrowLink onClick={() => navigate("Nutrition")}>
-              Log weight
-            </ArrowLink>
-          </Card>
-          <Card>
-            <SectionTitle title="This week" />
-            <p>
-              {weekly.reduce((n, w) => n + setCount(w), 0)} working sets ·{" "}
-              {s.history.length} total sessions
-            </p>
-            <ArrowLink onClick={() => navigate("Progress")}>
-              Weekly review
-            </ArrowLink>
-          </Card>
-          <Card>
-            <SectionTitle title="Recent strength improvements" />
-            {improvements.length ? (
-              improvements.map((r, i) => (
-                <div className="list-line" key={i}>
-                  <div>
-                    <strong>{r.name}</strong>
-                    <small>{r.machine}</small>
-                  </div>
-                  <strong>
-                    +{fromKg(r.kg - r.previousKg!, s.profile.units)}{" "}
-                    {s.profile.units}
-                  </strong>
-                </div>
-              ))
-            ) : (
-              <p className="muted">No records yet.</p>
-            )}
-          </Card>
-          <Card>
-            <SectionTitle title="Recently used" />
-            {used.length ? (
-              used.map(({ m, stats }) => (
-                <button
-                  key={m.id}
-                  className="list-line plan-link"
-                  onClick={() => openMachine(m.id)}
-                >
-                  <MachineVisual compact machine={m} />
-                  <span>
-                    <strong>{m.name}</strong>
-                    <small>
-                      {formatDate(stats.last!)} · {stats.sessions} sessions
-                    </small>
-                  </span>
-                </button>
-              ))
-            ) : (
-              <p className="muted">No machines used yet.</p>
-            )}
-          </Card>
-        </div>
-      </details>
     </div>
   );
 }

@@ -2649,27 +2649,6 @@ details > p {
 .today-last strong {
   font-size: 19px;
 }
-.today-details {
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  padding: 6px 0;
-}
-.today-details > summary {
-  padding: 10px 0;
-  cursor: pointer;
-  color: var(--muted);
-}
-.simple-insights {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  padding-top: 12px;
-}
-.insight-value {
-  font-size: 22px;
-  display: block;
-  margin-bottom: 10px;
-}
 .today-recovery {
   margin: 22px 0 0;
   font-size: 12px;
@@ -3138,9 +3117,6 @@ details > p {
   .today-last {
     flex-direction: column;
     align-items: stretch;
-  }
-  .simple-insights {
-    grid-template-columns: 1fr;
   }
   .machine-grid {
     grid-template-columns: 1fr 1fr;
