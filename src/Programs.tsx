@@ -15,6 +15,7 @@ import {
   uid,
   days,
   fromKg,
+  repTarget,
 } from "./model";
 import { change } from "./db";
 import { working } from "./logic";
@@ -67,9 +68,8 @@ export function ExerciseDetail({
             .filter((i) => i.exerciseId === id)
             .map((i) => (
               <p className="small" key={`${p.id}-${i.id}`}>
-                <strong>{p.name}</strong> ·{" "}
-                {s.profile.intro ? Math.min(i.sets, 2) : i.sets} × {i.min}–
-                {i.max} · {i.rest}s rest
+                <strong>{p.name}</strong> · {i.sets} × {repTarget(i.min, i.max)}{" "}
+                · {i.rest}s rest
                 <br />
                 {s.machines.find((m) => m.id === i.machineId)?.name ??
                   "Unassigned equipment"}
@@ -196,6 +196,8 @@ export function ExerciseEditor({ onClose }: { onClose: () => void }) {
           >
             {[
               "Upper chest",
+              "Chest",
+              "Rear shoulders",
               "Back",
               "Shoulders",
               "Biceps",
@@ -407,11 +409,13 @@ export function ProgramEditor({
             value={add}
             onChange={(e) => setAdd(e.target.value)}
           >
-            {s.exercises.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.name}
-              </option>
-            ))}
+            {s.exercises
+              .filter((e) => !e.archived)
+              .map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.name}
+                </option>
+              ))}
           </select>
           <Button
             type="button"
@@ -424,9 +428,9 @@ export function ProgramEditor({
                     id: uid(),
                     exerciseId: add,
                     machineId: "",
-                    sets: 2,
-                    min: 8,
-                    max: 12,
+                    sets: 4,
+                    min: 10,
+                    max: 10,
                     rest: 90,
                   },
                 ],
@@ -464,11 +468,7 @@ export function Programs({
         s.exercises
           .find((e) => e.id === i.exerciseId)
           ?.muscles.forEach(
-            (m) =>
-              (coverage[m] =
-                (coverage[m] ?? 0) +
-                (s.profile.intro ? Math.min(i.sets, 2) : i.sets) *
-                  p.days.length),
+            (m) => (coverage[m] = (coverage[m] ?? 0) + i.sets * p.days.length),
           );
       }),
     );
@@ -483,25 +483,6 @@ export function Programs({
           </Button>
         }
       />
-      <Card className="foundation">
-        <div>
-          <span className="eyebrow">
-            {s.profile.intro ? "1–2 SETS PER EXERCISE" : "FULL PROGRAM VOLUME"}
-          </span>
-        </div>
-        <Button
-          variant="secondary"
-          onClick={() =>
-            void change((s) => {
-              s.profile.intro = !s.profile.intro;
-            }).catch(() => {})
-          }
-        >
-          {s.profile.intro
-            ? "I’m ready for full volume"
-            : "Use foundation volume"}
-        </Button>
-      </Card>
       <div className="program-grid">
         {s.programs
           .filter((p) => !p.archived)
@@ -523,12 +504,7 @@ export function Programs({
               <h2>{p.name}</h2>
               <p className="muted small">
                 {p.items.length} exercises ·{" "}
-                {p.items.reduce(
-                  (n, i) =>
-                    n + (s.profile.intro ? Math.min(i.sets, 2) : i.sets),
-                  0,
-                )}{" "}
-                working sets
+                {p.items.reduce((n, i) => n + i.sets, 0)} working sets
               </p>
               {p.items.map((item) => (
                 <button
@@ -546,8 +522,7 @@ export function Programs({
                     </small>
                   </div>
                   <span>
-                    {s.profile.intro ? Math.min(item.sets, 2) : item.sets} ×{" "}
-                    {item.min}–{item.max}
+                    {item.sets} × {repTarget(item.min, item.max)}
                   </span>
                 </button>
               ))}
@@ -615,6 +590,7 @@ export function Programs({
         />
         <div className="library">
           {s.exercises
+            .filter((e) => !e.archived)
             .filter((e) =>
               `${e.name} ${e.muscles.join(" ")}`
                 .toLowerCase()

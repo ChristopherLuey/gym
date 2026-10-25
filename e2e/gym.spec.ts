@@ -57,9 +57,9 @@ test("onboarding units, equipment grouping, direct machine access and exercise n
   await page.getByRole("button", { name: "Get started" }).click();
   await page.locator(".exercise-preview.plan-link").first().click();
   await expect(
-    page.getByRole("dialog", { name: "Incline chest press", exact: true }),
+    page.getByRole("dialog", { name: "Bench & barbell", exact: true }),
   ).toBeVisible();
-  await expect(page).toHaveURL(/#Machines\?machine=m-press$/);
+  await expect(page).toHaveURL(/#Machines\?machine=m-bench$/);
   await page.getByRole("button", { name: "Close dialog", exact: true }).click();
   await page.getByRole("button", { name: "Filters & groups" }).click();
   await expect(page.getByLabel("Group machines by")).toHaveValue("area");
@@ -113,7 +113,7 @@ test("onboarding, full workout lifecycle, setup, replacement, history and offlin
   await onboard(page);
   await nav(page, "Machines");
   await page
-    .getByRole("button", { name: "Edit Incline chest press", exact: true })
+    .getByRole("button", { name: "Edit Bench & barbell", exact: true })
     .click();
   await page.getByLabel("Seat position").fill("4");
   await page.getByLabel("Handle selection").fill("Neutral");
@@ -181,7 +181,7 @@ test("onboarding, full workout lifecycle, setup, replacement, history and offlin
   await card
     .getByRole("button", { name: `Delete ${ex} set 1`, exact: true })
     .click();
-  await expect(card.locator(".set-row")).toHaveCount(2);
+  await expect(card.locator(".set-row")).toHaveCount(4);
   await card
     .getByRole("button", { name: `Move ${ex} down`, exact: true })
     .click();
@@ -207,22 +207,25 @@ test("onboarding, full workout lifecycle, setup, replacement, history and offlin
     .click();
   await expect(page.locator(".live-exercise")).toHaveCount(originalCount);
   await card.getByRole("button", { name: "Add set", exact: true }).click();
-  await expect(card.locator(".set-row")).toHaveCount(3);
+  await expect(card.locator(".set-row")).toHaveCount(5);
   await card
-    .getByRole("button", { name: `Delete ${ex} set 3`, exact: true })
+    .getByRole("button", { name: `Delete ${ex} set 5`, exact: true })
     .click();
-  await expect(card.locator(".set-row")).toHaveCount(2);
+  await expect(card.locator(".set-row")).toHaveCount(4);
   await card
     .getByRole("button", { name: "Machine occupied?", exact: true })
     .click();
-  await page.getByLabel("Replacement machine").selectOption("m-cable");
+  await page.getByLabel("Replacement machine").selectOption("m-press");
   await page.getByRole("button", { name: "Use this setup" }).click();
   await expect(
     page.locator(".live-exercise").first().locator(".set-row"),
   ).toHaveCount(1);
   const replacement = page.locator(".live-exercise").nth(1);
   await expect(
-    replacement.getByRole("button", { name: "Cable station", exact: true }),
+    replacement.getByRole("button", {
+      name: "Incline chest press",
+      exact: true,
+    }),
   ).toBeVisible();
   await replacement
     .getByLabel(`${ex} set 1 weight`, { exact: true })
@@ -267,7 +270,7 @@ test("onboarding, full workout lifecycle, setup, replacement, history and offlin
   ).toBeVisible();
   await page.getByRole("button", { name: "Done" }).click();
   await nav(page, "Progress");
-  await page.getByLabel("Machine", { exact: true }).selectOption("m-press");
+  await page.getByLabel("Machine", { exact: true }).selectOption("m-bench");
   await expect(
     page.getByRole("img", { name: /Heaviest working set/ }),
   ).toBeVisible();
@@ -372,7 +375,7 @@ test("machine creation/edit, program assignment, nutrition, theme and backups", 
   await page.getByRole("button", { name: "Save program" }).click();
   await nav(page, "Today");
   await expect(
-    page.getByText("Chest press near mirrors · 2 × 8–12"),
+    page.getByText("Chest press near mirrors · 4 × 10"),
   ).toBeVisible();
   await page
     .getByRole("button", { name: "Start workout", exact: true })
@@ -380,11 +383,11 @@ test("machine creation/edit, program assignment, nutrition, theme and backups", 
   const first = page.locator(".live-exercise").first();
   await page.getByRole("button", { name: "Edit workout", exact: true }).click();
   await first
-    .getByLabel("Incline machine chest press set 1 weight", { exact: true })
+    .getByLabel("Bench press set 1 weight", { exact: true })
     .fill("40");
   await first
     .getByRole("button", {
-      name: "Complete Incline machine chest press set 1",
+      name: "Complete Bench press set 1",
       exact: true,
     })
     .click();

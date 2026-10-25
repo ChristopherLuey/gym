@@ -17,6 +17,7 @@ import { toKg, fromKg } from "./model";
 function completed() {
   const s = seed();
   s.profile.intro = false;
+  Object.assign(s.programs[0].items[0], { sets: 3, min: 8, max: 12 });
   const w = startWorkout(s, s.programs[0]);
   const e = w.entries[0];
   e.sets.forEach((set) =>
@@ -138,7 +139,7 @@ describe("workout calculations and machine isolation", () => {
     const { s, w, e } = completed();
     w.entries.push({ ...structuredClone(e), id: "other", exerciseId: "row" });
     s.history.push(w);
-    expect(machineStats(s, "m-press")).toMatchObject({
+    expect(machineStats(s, e.machineId)).toMatchObject({
       sessions: 1,
       sets: 6,
       reps: 72,
@@ -160,13 +161,17 @@ describe("workout calculations and machine isolation", () => {
       previousKg: 30,
     });
   });
-  it("prefills the matching machine setup and keeps first sessions reduced", () => {
+  it("prefills matching load and setup while honoring four sets of ten despite the old intro flag", () => {
     const { s, w, e } = completed();
     e.setup.seat = "4";
     s.history.push(w);
     s.profile.intro = true;
+    Object.assign(s.programs[0].items[0], { sets: 4, min: 10, max: 10 });
     const next = startWorkout(s, s.programs[0]);
-    expect(next.entries[0].sets.length).toBe(2);
+    expect(next.entries[0].sets.length).toBe(4);
+    expect(next.entries[0].sets.map((set) => set.reps)).toEqual([
+      10, 10, 10, 10,
+    ]);
     expect(next.entries[0].sets[0].kg).toBe(30);
     expect(next.entries[0].setup.seat).toBe("4");
   });

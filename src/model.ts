@@ -13,6 +13,11 @@ export const machineVisuals = [
   "legcurl",
   "cable",
   "dumbbell",
+  "bench",
+  "chestfly",
+  "rearfly",
+  "abs",
+  "triceps",
 ] as const;
 export const setupSchema = z.object({
   seat: text,
@@ -65,6 +70,7 @@ export const exerciseSchema = z.object({
   mistakes: text,
   alternatives: z.array(id),
   notes: text,
+  archived: z.boolean().optional(),
 });
 export const prescriptionSchema = z
   .object({
@@ -152,7 +158,7 @@ export const profileSchema = z.object({
   equipmentGroup: z.enum(["none", "area", "type", "muscle"]).default("none"),
 });
 export const stateSchema = z.object({
-  schema: z.literal(2),
+  schema: z.literal(3),
   profile: profileSchema,
   machines: z.array(machineSchema),
   exercises: z.array(exerciseSchema).min(1),
@@ -205,6 +211,8 @@ export const fromKg = (kg: number, unit: Profile["units"]) =>
   Math.round(kg * (unit === "lb" ? 2.2046226218 : 1) * 10) / 10;
 export const toKg = (value: number, unit: Profile["units"]) =>
   value / (unit === "lb" ? 2.2046226218 : 1);
+export const repTarget = (min: number, max: number) =>
+  min === max ? String(min) : `${min}–${max}`;
 export const formatDate = (value: number | string) =>
   new Date(
     typeof value === "string" ? value + "T12:00:00" : value,

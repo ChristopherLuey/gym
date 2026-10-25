@@ -2,6 +2,17 @@
 
 Status: implemented and deployed; production verification completed on October 21, 2026 (Pacific time). See [STATUS.md](STATUS.md) for evidence and the physical-iPhone verification limit.
 
+## Current training and presentation requirements — October 24, 2026
+
+These explicit user revisions supersede conflicting original requirements below:
+
+- Every programmed exercise uses four working sets of ten repetitions. Remove introductory-volume reductions. New exercises and repeat-last-workout also start at 4 × 10; actual logged performance remains editable.
+- Free weights: barbell bench press, dumbbell biceps curls, and dumbbell lateral raises (the user's “deltoid lift”). Cable work is triceps pushdowns only; remove cable curls and cable lateral raises from the active library and future plans.
+- Add distinct chest fly, reverse fly (rear delts/upper back), and ab crunch machines with recognizable visuals.
+- Keep three balanced A/B/C sessions. Place the priority presses, pulls, and leg press before accessory exercises; put abs last. The full sequence is maintained in README.md and the program definitions.
+- Apply the changes to existing browser installations and older backups, not just new profiles. Preserve completed history, machine-specific loads, notes, personal equipment names, chosen days, and interrupted sessions. Never recategorize old cable loads as dumbbell records. Save a recovery snapshot before the schema update.
+- Keep the compact single-line workout header with GYM, program name, count, plan, and pause. No machine-setup button, set-options panel, save/offline status, settings shortcut, tutorials, or extra descriptive copy in the workout flow.
+
 ## Simplicity revision — October 22, 2026
 
 The user's next priority is simplicity, recognizable machine visuals, and a workout that walks them through training. The default experience should present one exercise and one set at a time: find the machine, understand setup and technique, perform and confirm a set, rest, and continue. Keep a clear next action, a recoverable position after interruptions, easy equipment replacement, and undo for a mistaken set completion. Existing history, backups, and full editing capabilities must survive the redesign.
@@ -90,16 +101,16 @@ Finishing saves an immutable-enough historical snapshot of the performed names/p
 
 Initial schedule: Monday Full Body A, Wednesday Full Body B, Friday Full Body C. Organize balanced sessions around this starting library:
 
-| Exercise | Suggested equipment | Standard working sets | Repetitions |
-| --- | --- | ---: | --- |
-| Incline machine chest press | Incline chest press machine | 3 | 8–12 |
-| Lat pulldown | Lat pulldown machine | 3 | 8–12 |
-| Chest-supported row | Chest-supported row machine | 2 | 8–12 |
-| Leg press | Leg press machine | 2 | 8–12 |
-| Seated leg curl | Seated leg curl machine | 2 | 10–15 |
-| Cable lateral raises | Cable station | 3 | 12–20 |
-| Bicep curls | Cable station or curl machine | 2 | 10–15 |
-| Tricep pushdowns | Cable station | 2 | 10–15 |
+| Exercise                    | Suggested equipment           | Standard working sets | Repetitions |
+| --------------------------- | ----------------------------- | --------------------: | ----------- |
+| Incline machine chest press | Incline chest press machine   |                     3 | 8–12        |
+| Lat pulldown                | Lat pulldown machine          |                     3 | 8–12        |
+| Chest-supported row         | Chest-supported row machine   |                     2 | 8–12        |
+| Leg press                   | Leg press machine             |                     2 | 8–12        |
+| Seated leg curl             | Seated leg curl machine       |                     2 | 10–15       |
+| Cable lateral raises        | Cable station                 |                     3 | 12–20       |
+| Bicep curls                 | Cable station or curl machine |                     2 | 10–15       |
+| Tricep pushdowns            | Cable station                 |                     2 | 10–15       |
 
 First two weeks: approximately one to two sets per exercise, with volume increases dependent on tolerance and recovery rather than mandatory calendar escalation. Clearly show the introductory prescription and how to adjust it. Choose sensible A/B/C variations, substitutions, order, and per-session volumes; expose weekly muscle coverage and machine-use plans.
 

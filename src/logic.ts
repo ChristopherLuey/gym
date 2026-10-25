@@ -93,7 +93,7 @@ export function newEntry(state: State, p: Prescription): Entry {
   const ex = state.exercises.find((e) => e.id === p.exerciseId)!;
   const m = state.machines.find((m) => m.id === p.machineId && !m.archived);
   const prior = previous(state, ex.id, m?.id ?? "");
-  const count = state.profile.intro ? Math.min(p.sets, 2) : p.sets;
+  const count = p.sets;
   const suggestion = progression(prior, m?.incrementKg, {
     max: p.max,
     targetSets: count,
@@ -110,7 +110,7 @@ export function newEntry(state: State, p: Prescription): Entry {
     sets: Array.from({ length: count }, (_, i) => ({
       id: uid(),
       kg: last[i]?.kg ?? last.at(-1)?.kg ?? 0,
-      reps: last[i]?.reps ?? p.min,
+      reps: p.min === p.max ? p.min : (last[i]?.reps ?? p.min),
       rir: null,
       kind: "work" as const,
       done: false,
@@ -137,6 +137,34 @@ export function startWorkout(state: State, p: Program): Workout {
     restUntil: null,
     entries: p.items.map((i) => newEntry(state, i)),
     notes: "",
+  };
+}
+export function repeatProgram(w: Workout): Program {
+  return {
+    id: w.programId,
+    name: w.name,
+    days: [],
+    archived: false,
+    items: w.entries.map((e) => {
+      const legacyCable = e.exerciseId === "lateral" || e.exerciseId === "curl";
+      return {
+        id: e.id,
+        exerciseId: legacyCable
+          ? e.exerciseId === "lateral"
+            ? "dblateral"
+            : "dbcurl"
+          : e.exerciseId,
+        machineId: legacyCable
+          ? "m-dumbbell"
+          : e.machineId === "m-cable" && e.exerciseId !== "pushdown"
+            ? ""
+            : e.machineId,
+        sets: 4,
+        min: 10,
+        max: 10,
+        rest: e.rest,
+      };
+    }),
   };
 }
 export function machineStats(

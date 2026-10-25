@@ -20,6 +20,7 @@ import {
   fromKg,
   toKg,
   formatDate,
+  repTarget,
 } from "./model";
 import { change } from "./db";
 import {
@@ -296,7 +297,7 @@ export function Workout({
                     </div>
                     <div className="exercise-tools">
                       <span className="muscle-tag">
-                        {e.min}–{e.max} reps · {e.rest}s rest
+                        {repTarget(e.min, e.max)} reps · {e.rest}s rest
                       </span>
                       <button
                         className="text-button"
@@ -440,7 +441,8 @@ export function Workout({
                             e.sets.push({
                               id: uid(),
                               kg: last?.kg ?? 0,
-                              reps: last?.reps ?? e.min,
+                              reps:
+                                e.min === e.max ? e.min : (last?.reps ?? e.min),
                               rir: null,
                               kind: "work",
                               done: false,
@@ -720,11 +722,13 @@ export function Workout({
               value={replaceExercise}
               onChange={(e) => setReplaceExercise(e.target.value)}
             >
-              {s.exercises.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.name}
-                </option>
-              ))}
+              {s.exercises
+                .filter((e) => !e.archived || e.id === replaceExercise)
+                .map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.name}
+                  </option>
+                ))}
             </select>
           </Field>
           <Field label="Replacement machine">
@@ -752,11 +756,13 @@ export function Workout({
         <Modal title="Add an exercise" onClose={() => setAdd(false)}>
           <Field label="Exercise">
             <select value={addId} onChange={(e) => setAddId(e.target.value)}>
-              {s.exercises.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.name}
-                </option>
-              ))}
+              {s.exercises
+                .filter((e) => !e.archived)
+                .map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.name}
+                  </option>
+                ))}
             </select>
           </Field>
           <Button
@@ -768,9 +774,9 @@ export function Workout({
                     id: uid(),
                     exerciseId: addId,
                     machineId: "",
-                    sets: 2,
-                    min: 8,
-                    max: 12,
+                    sets: 4,
+                    min: 10,
+                    max: 10,
                     rest: s.profile.rest,
                   }),
                 );

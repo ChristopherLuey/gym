@@ -41,11 +41,25 @@ For a real production-update check, run `node scripts/verify-production-update.m
 - Live workouts with pause/resume, persistent active sessions, warm-up/working sets, RIR, configurable rest, notes, setup details, conservative progression, and completion summaries.
 - Edit workout opens the full session editor for adding/reordering exercises, warm-ups, set corrections, and notes. Back to workout returns to the current set. Optional RIR, fatigue, progression suggestions, and rest duration are available in the full editor. The guided set card has only weight, reps, and Set complete. Workouts use one compact header with the app name, workout name, set count, and controls; no save status or settings shortcut. Machine settings can be edited in Machines.
 - Equipment replacement preserves completed sets on the original equipment. The replacement begins a distinct history.
-- Editable/custom programs and exercises, muscle coverage, personal exercise notes, per-machine records/setup history, machine assignments, and introductory volume.
+- Editable/custom programs and exercises, muscle coverage, personal exercise notes, per-machine records/setup history, and machine assignments. New exercises and repeated workouts default to 4 sets of 10; there is no automatic introductory set reduction.
 - Machines with custom names, area/type/muscle grouping, brand/model, settings, local photos, favorites, archiving, and usage totals.
 - Weight, training volume, machine/exercise strength, machine usage, records, optional measurements, and history.
 - Simple protein/calorie entries, reusable meals, weekly weight averages and direction relative to a target, adjustable goals, and optional detailed tracking.
 - Dark/light themes, installable PWA, offline shell, responsive layouts, local storage, validated export/import, and recovery snapshots.
+
+## Current training plan
+
+Every exercise defaults to **4 sets × 10 reps**, including repeat-last-workout and newly added exercises. The former introductory set cap is removed. Rest defaults to 120 seconds for bench press, rows, pulldowns, and leg press; 90 seconds for accessories.
+
+| Day           | Exercise order                                                                                                                |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Monday · A    | Bench press → Lat pulldown → Leg press → Dumbbell lateral raise → Dumbbell biceps curl → Ab crunch                            |
+| Wednesday · B | Chest-supported row → Leg press → Chest fly → Seated leg curl → Tricep pushdowns → Ab crunch                                  |
+| Friday · C    | Bench press → Lat pulldown → Seated leg curl → Reverse fly → Dumbbell lateral raise → Dumbbell biceps curl → Tricep pushdowns |
+
+Bench press uses a barbell and bench; “deltoid lift” means a dumbbell lateral raise. Reverse fly targets rear delts and upper back. Cable work is assigned only to triceps. Priority compound exercises precede accessories; abs finish their sessions. This ordering follows conventional fatigue management, with no claim that one sequence guarantees more muscle growth ([HPRC exercise-order guidance](https://www.hprc-online.org/physical-fitness/training-performance/choosing-right-exercises-optimize-your-resistance-training)).
+
+Schema 3 applies the revised plan once to existing installations and older imports. It retains program names/days, custom equipment details, completed history, and in-progress sessions. A database-upgrade recovery snapshot preserves the original data. Retired cable curls/raises remain as archived records so their historical loads are never mistaken for dumbbell performance. A session already in progress keeps its original prescription; the revised program applies to the next session.
 
 ## Privacy and backups
 

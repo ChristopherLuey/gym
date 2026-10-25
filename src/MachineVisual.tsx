@@ -10,11 +10,21 @@ export const visualNames = {
   legcurl: "Seated leg curl",
   cable: "Cable station",
   dumbbell: "Dumbbells",
+  bench: "Bench & barbell",
+  chestfly: "Chest fly machine",
+  rearfly: "Reverse fly machine",
+  abs: "Ab crunch machine",
+  triceps: "Triceps cable",
 };
 export function visualKind(machine?: Machine) {
   if (!machine) return null;
   if (machine.visual && machine.visual !== "auto") return machine.visual;
   const name = (machine.name + " " + machine.type).toLowerCase();
+  if (/reverse.*fly|rear.*fly|rear.*delt/.test(name)) return "rearfly";
+  if (/fly|pec.*deck/.test(name)) return "chestfly";
+  if (/ab.*crunch|abs.*machine/.test(name)) return "abs";
+  if (/tricep/.test(name)) return "triceps";
+  if (/bench|barbell/.test(name)) return "bench";
   if (/dumbbell|free weight/.test(name)) return "dumbbell";
   if (/leg.*press/.test(name)) return "legpress";
   if (/leg.*curl/.test(name)) return "legcurl";
@@ -69,6 +79,96 @@ export function MachineVisual({
             strokeLinecap="round"
             strokeLinejoin="round"
           >
+            {kind === "bench" && (
+              <>
+                <path d="M48 181h203M73 180V62m154 118V62M64 75h19m135 0h18M75 148v32m108-32v32M63 153h133" />
+                <path className="art-pad" d="M62 133h133v15H62z" />
+                <path className="art-arm" d="M44 67h211" />
+                <rect
+                  className="art-pad"
+                  x="54"
+                  y="43"
+                  width="12"
+                  height="48"
+                  rx="3"
+                />
+                <rect
+                  className="art-pad"
+                  x="234"
+                  y="43"
+                  width="12"
+                  height="48"
+                  rx="3"
+                />
+                <path d="M48 54v26m204-26v26M98 149l-12 32m81-32 15 32" />
+              </>
+            )}
+            {(kind === "chestfly" || kind === "rearfly") && (
+              <>
+                <Stack x={205} />
+                <path d="M49 182h197M145 181V42m0 0h80M122 148v33m25-30 25 31M145 48 95 54m50-6 38 14" />
+                <path
+                  className="art-pad"
+                  d="M131 80h24v62h-24zM111 143h57v12h-57z"
+                />
+                {kind === "chestfly" ? (
+                  <>
+                    <path
+                      className="art-arm"
+                      d="M95 54 65 92l24 31m94-61 16 37-29 27"
+                    />
+                    <path
+                      className="art-pad"
+                      d="m73 99 11-5 14 22-11 6zm102 10 11 6-12 21-11-6z"
+                    />
+                    <path d="m96 126 13-5m54 15-12-6" />
+                  </>
+                ) : (
+                  <>
+                    <path
+                      className="art-arm"
+                      d="M95 54 52 89v35m131-62 31 38v30"
+                    />
+                    <path d="M43 125h26m132 5h26" />
+                    <path className="art-pad" d="M126 88h34v38h-34z" />
+                  </>
+                )}
+                <circle cx="95" cy="54" r="5" />
+                <circle cx="183" cy="62" r="5" />
+              </>
+            )}
+            {kind === "abs" && (
+              <>
+                <Stack x={216} />
+                <path d="M48 182h196M97 144v38m0-18 78 18M145 140l33 42M148 111l40-66h42M102 145l-27 24m0 0h30" />
+                <path
+                  className="art-pad"
+                  d="M83 134h66v13H83zm47-11 14-44 17 6-14 44z"
+                />
+                <path
+                  className="art-arm"
+                  d="M184 50 126 61l-25 27m24-27 37 32M91 89h28m31 4h25"
+                />
+                <rect
+                  className="art-pad"
+                  x="80"
+                  y="164"
+                  width="39"
+                  height="12"
+                  rx="6"
+                />
+                <circle cx="184" cy="50" r="6" />
+              </>
+            )}
+            {kind === "triceps" && (
+              <>
+                <Stack x={187} />
+                <path d="M72 182h170M204 29h-76v24M128 29l-27 17m27-17 37 16M128 54v42" />
+                <circle cx="128" cy="29" r="7" />
+                <path className="art-arm" d="M128 96l-19 34m19-34 19 34" />
+                <path d="m103 131 12 5m26 0 12-5" />
+              </>
+            )}
             {kind === "press" && (
               <>
                 <Stack x={214} />

@@ -57,6 +57,10 @@ describe("guided workout", () => {
       set: { id: e.sets[1].id },
     });
     completeGuidedSet(w, e.id, e.sets[1].id, 2000);
+    for (const set of e.sets.slice(2)) {
+      continueGuide(w);
+      completeGuidedSet(w, e.id, set.id, 3000);
+    }
     expect(guidePosition(w).entry?.id).toBe(e.id);
     continueGuide(w);
     expect(guidePosition(w)).toMatchObject({
@@ -70,7 +74,7 @@ describe("guided workout", () => {
     e.sets[0].done = true;
     completeGuidedSet(w, e.id, e.sets[1].id, 1000);
     undoGuidedSet(w);
-    expect(e.sets.map((s) => s.done)).toEqual([true, false]);
+    expect(e.sets.map((s) => s.done)).toEqual([true, false, false, false]);
     expect(w.restUntil).toBeNull();
   });
   it("does not log while paused or with zero reps, or reopen completed work at the end", () => {

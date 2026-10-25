@@ -5,6 +5,7 @@ import {
   formatDate,
   fromKg,
   localDay,
+  repTarget,
 } from "./model";
 import {
   nextProgram,
@@ -14,6 +15,7 @@ import {
   records,
   plannedCompletion,
   weightTrend,
+  repeatProgram,
 } from "./logic";
 import { Card, Heading, SectionTitle, Button, Empty, ArrowLink } from "./ui";
 import { MachineVisual } from "./MachineVisual";
@@ -58,7 +60,7 @@ export function Today({
         machineName:
           s.machines.find((m) => m.id === p.machineId && !m.archived)?.name ??
           "Choose equipment",
-        sets: s.profile.intro ? Math.min(p.sets, 2) : p.sets,
+        sets: p.sets,
         done: false,
       }));
   const first = plan.find((p) => !p.done) ?? plan[0];
@@ -181,7 +183,8 @@ export function Today({
                   </small>
                   <strong>{item.name}</strong>
                   <small>
-                    {item.machineName} · {item.sets} × {item.min}–{item.max}
+                    {item.machineName} · {item.sets} ×{" "}
+                    {repTarget(item.min, item.max)}
                   </small>
                 </div>
                 {item.done ? (
@@ -218,23 +221,7 @@ export function Today({
           </div>
           <Button
             variant="secondary"
-            onClick={() =>
-              start({
-                id: last.programId,
-                name: last.name,
-                days: [],
-                archived: false,
-                items: last.entries.map((e) => ({
-                  id: e.id,
-                  exerciseId: e.exerciseId,
-                  machineId: e.machineId,
-                  sets: e.targetSets,
-                  min: e.min,
-                  max: e.max,
-                  rest: e.rest,
-                })),
-              })
-            }
+            onClick={() => start(repeatProgram(last))}
           >
             <RotateCcw size={16} />
             Repeat last workout

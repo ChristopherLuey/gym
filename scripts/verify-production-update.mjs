@@ -7,13 +7,14 @@ const base =
 const browser = await chromium.launch();
 const context = await browser.newContext({ ...devices["iPhone 13"] });
 const page = await context.newPage();
+let equipmentName = "";
 async function openMachineEditor() {
   await page
     .getByRole("navigation")
     .getByRole("link", { name: "Machines", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "Edit Incline chest press", exact: true })
+    .getByRole("button", { name: "Edit " + equipmentName, exact: true })
     .click();
 }
 async function openEditor() {
@@ -43,6 +44,9 @@ try {
     await navigator.serviceWorker.ready;
   });
   await page.reload();
+  equipmentName = await page
+    .locator(".today-first-machine > strong")
+    .innerText();
   await openMachineEditor();
   await page.getByLabel("Seat position").fill("4");
   await page.getByRole("button", { name: "Save machine", exact: true }).click();
@@ -130,6 +134,10 @@ try {
   ).toBeVisible();
   await openEditor();
   card = page.locator(".live-exercise").first();
+  await expect(card.locator(".set-row")).toHaveCount(4);
+  await expect(
+    card.getByLabel(`${exercise} set 1 reps`, { exact: true }),
+  ).toHaveValue("10");
   await expect(
     card.getByLabel(`${exercise} set 1 weight`, { exact: true }),
   ).toHaveValue("50");

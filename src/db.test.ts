@@ -57,7 +57,7 @@ describe("persistence and recovery", () => {
     databases.push(upgraded);
     await upgraded.open();
     const row = await upgraded.state.get("main");
-    expect(row?.value.schema).toBe(2);
+    expect(row?.value.schema).toBe(3);
     expect(row?.revision).toBe(0);
     expect(row?.value.profile.equipmentGroup).toBe("none");
     expect(row?.value.active?.entries[0].setup.seat).toBe("Legacy seat");
@@ -153,7 +153,7 @@ describe("persistence and recovery", () => {
     s.profile.name = "Existing profile";
     const v = { ...s, schema: 1, measurements: undefined, meals: undefined };
     const result = migrate(v);
-    expect(result.schema).toBe(2);
+    expect(result.schema).toBe(3);
     expect(result.profile.name).toBe("Existing profile");
     expect(result.measurements).toEqual([]);
   });

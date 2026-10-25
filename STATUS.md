@@ -2,6 +2,14 @@
 
 This file records evidence, not assumed completion. The full acceptance contract remains in GOAL.md.
 
+## Training plan revision — October 24, 2026
+
+- Added barbell bench press, dumbbell curls/lateral raises, chest fly, reverse fly, and ab crunch equipment visuals. Cable assignments in the default plan are triceps-only.
+- All default prescriptions, newly added exercises, and repeated sessions use 4 × 10. The old introductory set reduction is removed. A/B/C sessions put compound lifts before accessories and abs last.
+- Schema 3 revises existing saved plans once, with a recovery snapshot. Completed and interrupted sessions remain unchanged; legacy cable history stays distinct from free-weight exercises. Old backups still import, and later user edits are not reset on reload.
+- 36 unit tests passed, including a real IndexedDB v2→v3 migration, preservation of active/history data, backup recovery, and load separation. All 27 browser workflows were verified across desktop Chromium, iPhone Chromium, and iPhone WebKit; the three lifecycle cases passed after updating their old two-set expectation.
+- Visually checked the new chest/rear fly illustrations on desktop and the ab machine on mobile. Live deployment evidence is available in GitHub Actions; installed-app update checks write `test-results/production-update.json` locally.
+
 ## Compact layout revision — October 22, 2026
 
 - Reduced app bars, page headings, sidebar branding, card padding, section gaps, modal headers, and onboarding spacing on desktop and mobile.

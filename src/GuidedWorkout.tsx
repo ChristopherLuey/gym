@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, Pause, Play, RefreshCw, Undo2 } from "lucide-react";
-import { type State, type Workout, fromKg, toKg } from "./model";
+import { type State, type Workout, fromKg, toKg, repTarget } from "./model";
 import { change } from "./db";
 import {
   completeGuidedSet,
@@ -277,7 +277,7 @@ export function GuidedWorkout({
                     }}
                   />
                 </Field>
-                <Field label={`Reps (${entry.min}–${entry.max})`}>
+                <Field label={`Reps (${repTarget(entry.min, entry.max)})`}>
                   <input
                     aria-label="Reps completed"
                     type="number"

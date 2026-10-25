@@ -1,6 +1,7 @@
 import Dexie, { type Table } from "dexie";
 import { stateSchema, type State } from "./model";
 import { seed } from "./seed";
+import { updateTrainingPlan } from "./training-update";
 export class GymDB extends Dexie {
   state!: Table<{ id: string; value: State; revision: number }, string>;
   recovery!: Table<{ id: string; value: State; created: number }, string>;
@@ -14,10 +15,36 @@ export class GymDB extends Dexie {
           .table("state")
           .toCollection()
           .modify((row) => {
-            row.value = migrate(row.value);
+            if (row.value.schema === 1) {
+              row.value.schema = 2;
+              row.value.measurements ??= [];
+              row.value.meals ??= [];
+            }
             row.revision = row.revision ?? 0;
           }),
       );
+    this.version(3)
+      .stores({ state: "id", recovery: "id,created" })
+      .upgrade(async (tx) => {
+        const rows = await tx.table("state").toArray();
+        for (const row of rows) {
+          // Preserve the complete pre-update data before revising future plans.
+          await tx
+            .table("recovery")
+            .put({
+              id: crypto.randomUUID(),
+              value: row.value,
+              created: Date.now(),
+            });
+          await tx
+            .table("state")
+            .put({
+              ...row,
+              value: migrate(row.value),
+              revision: row.revision ?? 0,
+            });
+        }
+      });
   }
 }
 export function migrate(input: unknown): State {
@@ -26,6 +53,11 @@ export function migrate(input: unknown): State {
     v.schema = 2;
     v.measurements ??= [];
     v.meals ??= [];
+  }
+  if (v?.schema === 2) {
+    return validateState(
+      updateTrainingPlan(validateState({ ...v, schema: 3 })),
+    );
   }
   return validateState(v);
 }
@@ -91,7 +123,7 @@ export const encodeBackup = (s: State) =>
   JSON.stringify(
     {
       app: "GYM",
-      version: 2,
+      version: 3,
       exportedAt: new Date().toISOString(),
       data: validateState(s),
     },
@@ -101,12 +133,12 @@ export const encodeBackup = (s: State) =>
 export function decodeBackup(raw: string): State {
   if (raw.length > 30_000_000) throw new Error("Backup exceeds 30 MB.");
   const v = JSON.parse(raw);
-  if (v.app !== "GYM" || ![1, 2].includes(v.version))
+  if (v.app !== "GYM" || ![1, 2, 3].includes(v.version))
     throw new Error("This is not a supported GYM backup.");
   return migrate(v.data);
 }
 export async function restore(db: GymDB, s: State) {
-  validateState(s);
+  s = migrate(s);
   await db.transaction("rw", db.state, db.recovery, async () => {
     const before = await db.state.get("main");
     if (before?.value.active)
@@ -154,7 +186,12 @@ export async function load() {
     await db.transaction("rw", db.state, async () => {
       const row = await db.state.get("main");
       current = row ? migrate(row.value) : seed();
-      if (!row) await db.state.put({ id: "main", value: current, revision: 0 });
+      if (!row || row.value.schema !== current.schema)
+        await db.state.put({
+          id: "main",
+          value: current,
+          revision: row ? row.revision + 1 : 0,
+        });
     });
     loaded = true;
     error = "";

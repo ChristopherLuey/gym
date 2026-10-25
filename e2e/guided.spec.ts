@@ -13,7 +13,7 @@ async function begin(page: Page, savedSetup = false) {
       .getByRole("link", { name: "Machines", exact: true })
       .click();
     await page
-      .getByRole("button", { name: "Edit Incline chest press", exact: true })
+      .getByRole("button", { name: "Edit Bench & barbell", exact: true })
       .click();
     await page.getByLabel("Seat position").fill("4");
     await page
@@ -54,7 +54,7 @@ test("guided session walks through every set and machine, survives offline rest 
   ).toHaveCount(0);
   await expect(
     page.getByRole("img", {
-      name: "Incline chest press equipment illustration",
+      name: "Bench & barbell equipment illustration",
     }),
   ).toBeVisible();
   await page.screenshot({
@@ -77,14 +77,14 @@ test("guided session walks through every set and machine, survives offline rest 
   });
   await page.getByRole("button", { name: "Set complete", exact: true }).click();
   await expect(page.getByLabel("Sets complete", { exact: true })).toHaveText(
-    "1/12",
+    "1/24",
   );
   await page.getByRole("button", { name: "Undo last set" }).click();
   await expect(page.getByLabel("Set weight", { exact: true })).toHaveValue(
     "50",
   );
   await expect(page.getByLabel("Sets complete", { exact: true })).toHaveText(
-    "0/12",
+    "0/24",
   );
   await page.getByRole("button", { name: "Set complete", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Rest" })).toBeVisible();
@@ -105,26 +105,33 @@ test("guided session walks through every set and machine, survives offline rest 
   await expect(page.getByLabel("Set weight", { exact: true })).toHaveValue(
     "50",
   );
-  await expect(page.getByRole("heading", { name: "Set 2 of 2" })).toBeVisible();
-  await page.getByRole("button", { name: "Set complete", exact: true }).click();
-  await page
-    .getByRole("button", { name: /^Next (set|exercise)$/, exact: true })
-    .click();
+  await expect(page.getByRole("heading", { name: "Set 2 of 4" })).toBeVisible();
+  for (let set = 2; set <= 4; set++) {
+    await expect(
+      page.getByLabel("Reps completed", { exact: true }),
+    ).toHaveValue("10");
+    await page
+      .getByRole("button", { name: "Set complete", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: /^Next (set|exercise)$/, exact: true })
+      .click();
+  }
   await expect(
     page.getByRole("heading", { name: "Lat pulldown", exact: true }),
   ).toBeVisible();
   const names = [
     "Lat pulldown",
     "Leg press",
-    "Seated leg curl",
-    "Cable lateral raises",
-    "Bicep curls",
+    "Dumbbell lateral raise",
+    "Dumbbell biceps curl",
+    "Ab crunch",
   ];
   for (const [index, name] of names.entries()) {
     await expect(
       page.getByRole("heading", { name, exact: true }),
     ).toBeVisible();
-    for (let set = 0; set < 2; set++) {
+    for (let set = 0; set < 4; set++) {
       await page.getByLabel("Set weight", { exact: true }).fill("20");
       await page
         .getByRole("button", { name: "Set complete", exact: true })
@@ -132,7 +139,7 @@ test("guided session walks through every set and machine, survives offline rest 
       await page
         .getByRole("button", {
           name:
-            index === 4 && set === 1
+            index === 4 && set === 3
               ? "Review workout"
               : /^Next (set|exercise)$/,
           exact: true,
@@ -144,7 +151,7 @@ test("guided session walks through every set and machine, survives offline rest 
     page.getByRole("heading", { name: "All sets complete" }),
   ).toBeVisible();
   await expect(page.getByLabel("Sets complete", { exact: true })).toHaveText(
-    "12/12",
+    "24/24",
   );
   await page
     .getByRole("button", { name: "Finish workout", exact: true })
@@ -173,14 +180,18 @@ test("guided machine replacement and plan navigation preserve completed sets", a
   await page
     .getByRole("button", { name: "Machine occupied?", exact: true })
     .click();
-  await page.getByLabel("Replacement machine").selectOption("m-cable");
+  await page.getByLabel("Replacement machine").selectOption("m-press");
   await page.getByRole("button", { name: "Use this setup" }).click();
   await expect(
-    page.getByRole("img", { name: "Cable station equipment illustration" }),
+    page.getByRole("img", {
+      name: "Incline chest press equipment illustration",
+    }),
   ).toBeVisible();
   await page.reload();
   await expect(
-    page.getByRole("img", { name: "Cable station equipment illustration" }),
+    page.getByRole("img", {
+      name: "Incline chest press equipment illustration",
+    }),
   ).toBeVisible();
   await expect(page.getByLabel("Set weight", { exact: true })).toHaveValue("0");
   await page.getByRole("button", { name: "Workout plan", exact: true }).click();
@@ -197,7 +208,7 @@ test("guided machine replacement and plan navigation preserve completed sets", a
   ).toHaveCount(1);
   await expect(
     page.locator(".live-exercise").first().getByRole("button", {
-      name: "Uncheck Incline machine chest press set 1",
+      name: "Uncheck Bench press set 1",
     }),
   ).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "Back to workout" }).click();

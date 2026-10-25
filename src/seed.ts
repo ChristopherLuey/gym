@@ -1,5 +1,33 @@
-import { emptySetup, type Exercise, type State, type Profile } from "./model";
+import {
+  emptySetup,
+  type Exercise,
+  type State,
+  type Profile,
+  type Machine,
+} from "./model";
 const library = [
+  [
+    "bench",
+    "Bench press",
+    "Chest",
+    "Shoulders,Triceps",
+    "Bench & barbell",
+    "",
+    "",
+  ],
+  ["dbcurl", "Dumbbell biceps curl", "Biceps", "", "Dumbbells", "", ""],
+  ["dblateral", "Dumbbell lateral raise", "Shoulders", "", "Dumbbells", "", ""],
+  ["chestfly", "Chest fly", "Chest", "", "Chest fly machine", "", ""],
+  [
+    "rearfly",
+    "Reverse fly",
+    "Rear shoulders",
+    "Upper back",
+    "Reverse fly machine",
+    "",
+    "",
+  ],
+  ["abs", "Ab crunch", "Core", "", "Ab crunch machine", "", ""],
   [
     "press",
     "Incline machine chest press",
@@ -124,6 +152,7 @@ export const exercises: Exercise[] = library.map(
                   ? ["row"]
                   : [],
     notes: "",
+    archived: id === "lateral" || id === "curl",
   }),
 );
 export const defaultProfile: Profile = {
@@ -135,7 +164,7 @@ export const defaultProfile: Profile = {
   minutes: 60,
   targetKg: null,
   limitations: "",
-  intro: true,
+  intro: false,
   createdAt: Date.now(),
   proteinGoal: null,
   calorieGoal: null,
@@ -146,7 +175,7 @@ export const defaultProfile: Profile = {
   equipmentGroup: "none",
 };
 export function seed(): State {
-  const machines = [
+  const machines: Machine[] = [
     [
       "m-press",
       "Incline chest press",
@@ -158,13 +187,29 @@ export function seed(): State {
     ["m-row", "Chest-supported row", "Machine", "Back", "Back"],
     ["m-legpress", "Leg press", "Machine", "Legs", "Quads"],
     ["m-legcurl", "Seated leg curl", "Machine", "Legs", "Hamstrings"],
-    ["m-cable", "Cable station", "Cable", "Cables", "Shoulders,Biceps,Triceps"],
+    ["m-cable", "Triceps cable", "Cable", "Cables", "Triceps"],
+    ["m-bench", "Bench & barbell", "Free weights", "Free weights", "Chest"],
+    [
+      "m-chestfly",
+      "Chest fly machine",
+      "Machine",
+      "Chest & shoulders",
+      "Chest",
+    ],
+    [
+      "m-rearfly",
+      "Reverse fly machine",
+      "Machine",
+      "Back",
+      "Rear shoulders,Upper back",
+    ],
+    ["m-abs", "Ab crunch machine", "Machine", "Core", "Core"],
     [
       "m-dumbbell",
       "Dumbbells",
       "Free weights",
       "Free weights",
-      "Upper chest,Back,Quads",
+      "Biceps,Shoulders,Upper chest,Back,Quads",
     ],
   ].map(([id, name, type, area, muscles]) => ({
     id,
@@ -179,6 +224,18 @@ export function seed(): State {
     archived: false,
     photo: "",
     incrementKg: type === "Cable" ? 1 : type === "Free weights" ? 1 : 2.5,
+    visual:
+      id === "m-cable"
+        ? "triceps"
+        : id === "m-bench"
+          ? "bench"
+          : id === "m-chestfly"
+            ? "chestfly"
+            : id === "m-rearfly"
+              ? "rearfly"
+              : id === "m-abs"
+                ? "abs"
+                : "auto",
   }));
   const mapping: Record<string, string> = {
     press: "m-press",
@@ -186,17 +243,29 @@ export function seed(): State {
     row: "m-row",
     legpress: "m-legpress",
     legcurl: "m-legcurl",
-    lateral: "m-cable",
-    curl: "m-cable",
+    bench: "m-bench",
+    dblateral: "m-dumbbell",
+    dbcurl: "m-dumbbell",
+    chestfly: "m-chestfly",
+    rearfly: "m-rearfly",
+    abs: "m-abs",
     pushdown: "m-cable",
   };
   const orders = [
-    ["press", "pulldown", "legpress", "legcurl", "lateral", "curl"],
-    ["row", "press", "legpress", "legcurl", "lateral", "pushdown"],
-    ["press", "pulldown", "row", "legpress", "lateral", "curl", "pushdown"],
+    ["bench", "pulldown", "legpress", "dblateral", "dbcurl", "abs"],
+    ["row", "legpress", "chestfly", "legcurl", "pushdown", "abs"],
+    [
+      "bench",
+      "pulldown",
+      "legcurl",
+      "rearfly",
+      "dblateral",
+      "dbcurl",
+      "pushdown",
+    ],
   ];
   return {
-    schema: 2,
+    schema: 3,
     profile: { ...defaultProfile, createdAt: Date.now() },
     exercises: structuredClone(exercises),
     machines,
@@ -209,20 +278,10 @@ export function seed(): State {
         id: `p-${i}-${j}`,
         exerciseId,
         machineId: mapping[exerciseId],
-        sets: ["press", "pulldown", "lateral"].includes(exerciseId) ? 3 : 2,
-        min:
-          exerciseId === "lateral"
-            ? 12
-            : ["curl", "pushdown", "legcurl"].includes(exerciseId)
-              ? 10
-              : 8,
-        max:
-          exerciseId === "lateral"
-            ? 20
-            : ["curl", "pushdown", "legcurl"].includes(exerciseId)
-              ? 15
-              : 12,
-        rest: ["press", "pulldown", "row", "legpress"].includes(exerciseId)
+        sets: 4,
+        min: 10,
+        max: 10,
+        rest: ["bench", "pulldown", "row", "legpress"].includes(exerciseId)
           ? 120
           : 90,
       })),
